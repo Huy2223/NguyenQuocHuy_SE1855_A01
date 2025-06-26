@@ -39,10 +39,25 @@ namespace DataAccessLayer
                 CustomerID = 3,
                 EmployeeID = 1,
                 OrderDate = new DateTime(2023, 6, 15)
+            },
+            // Orders for the customer with phone 1234567890 (CustomerID = 4)
+            new Orders
+            {
+                OrderID = 5,
+                CustomerID = 4, // FPTU Technology
+                EmployeeID = 1,
+                OrderDate = DateTime.Now.AddDays(-2)
+            },
+            new Orders
+            {
+                OrderID = 6,
+                CustomerID = 4, // FPTU Technology
+                EmployeeID = 2,
+                OrderDate = DateTime.Now.AddDays(-7)
             }
         };
 
-        private static int _nextId = 5;
+        private static int _nextId = 7;
 
         // Get all orders
         public List<Orders> GetAllOrders()
@@ -125,7 +140,10 @@ namespace DataAccessLayer
         // Get orders within a date range
         public List<Orders> GetOrdersByDateRange(DateTime startDate, DateTime endDate)
         {
-            return _orders.Where(o => o.OrderDate >= startDate && o.OrderDate <= endDate).ToList();
+            // Ensure the end date is inclusive (including the entire day)
+            var adjustedEndDate = endDate.Date.AddDays(1).AddSeconds(-1);
+            
+            return _orders.Where(o => o.OrderDate >= startDate && o.OrderDate <= adjustedEndDate).ToList();
         }
     }
 }

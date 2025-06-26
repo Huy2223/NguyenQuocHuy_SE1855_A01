@@ -43,6 +43,49 @@ namespace DataAccessLayer
                 UnitPrice = 80.00m,
                 Quantity = 3,
                 Discount = 0.1f
+            },
+            // Order details for the orders of customer with phone 1234567890 (CustomerID = 4)
+            // Order #5
+            new OrderDetails
+            {
+                OrderID = 5,
+                ProductID = 1, // Laptop
+                UnitPrice = 1200.00m,
+                Quantity = 2,
+                Discount = 0.1f
+            },
+            new OrderDetails
+            {
+                OrderID = 5,
+                ProductID = 4, // Headphones
+                UnitPrice = 150.00m,
+                Quantity = 3,
+                Discount = 0.05f
+            },
+            // Order #6
+            new OrderDetails
+            {
+                OrderID = 6,
+                ProductID = 2, // Smartphone
+                UnitPrice = 800.00m,
+                Quantity = 1,
+                Discount = 0.0f
+            },
+            new OrderDetails
+            {
+                OrderID = 6,
+                ProductID = 3, // Tablet
+                UnitPrice = 500.00m,
+                Quantity = 1,
+                Discount = 0.05f
+            },
+            new OrderDetails
+            {
+                OrderID = 6,
+                ProductID = 5, // Keyboard
+                UnitPrice = 80.00m,
+                Quantity = 2,
+                Discount = 0.0f
             }
         };
 

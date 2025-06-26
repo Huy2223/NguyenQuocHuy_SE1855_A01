@@ -18,5 +18,9 @@ namespace Services
         // Search methods
         IEnumerable<Customers> SearchCustomersByName(string name);
         IEnumerable<Customers> SearchCustomersByCompany(string companyName);
+        
+        // Authentication methods
+        Customers AuthenticateByPhone(string phone);
+        Customers GetCustomerByPhone(string phone);
     }
 }

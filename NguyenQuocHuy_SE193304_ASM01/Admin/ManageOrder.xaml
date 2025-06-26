@@ -1,0 +1,165 @@
+﻿<Window x:Class="NguyenQuocHuyWPF.Admin.ManageOrder"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:NguyenQuocHuyWPF.Admin"
+        mc:Ignorable="d"
+        Title="Manage Orders" Height="600" Width="950"
+        WindowStartupLocation="CenterScreen">
+    
+    <Window.Resources>
+        <!-- Action Button Style -->
+        <Style x:Key="ActionButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Width" Value="80"/>
+            <Setter Property="Margin" Value="5,0"/>
+            <Setter Property="Background" Value="#4CAF50"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#388E3C" TargetName="border"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#1B5E20" TargetName="border"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <!-- Header Style -->
+        <Style x:Key="HeaderStyle" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="18"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Foreground" Value="#303F9F"/>
+            <Setter Property="Margin" Value="0,0,0,10"/>
+        </Style>
+        
+        <!-- DataGrid Style -->
+        <Style x:Key="CustomDataGridStyle" TargetType="DataGrid">
+            <Setter Property="AutoGenerateColumns" Value="False"/>
+            <Setter Property="IsReadOnly" Value="True"/>
+            <Setter Property="CanUserAddRows" Value="False"/>
+            <Setter Property="CanUserDeleteRows" Value="False"/>
+            <Setter Property="CanUserReorderColumns" Value="False"/>
+            <Setter Property="CanUserResizeRows" Value="False"/>
+            <Setter Property="GridLinesVisibility" Value="Horizontal"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="BorderBrush" Value="#E0E0E0"/>
+            <Setter Property="RowHeaderWidth" Value="0"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="AlternatingRowBackground" Value="#F5F5F5"/>
+            <Setter Property="RowHeight" Value="35"/>
+            <Setter Property="HorizontalGridLinesBrush" Value="#E0E0E0"/>
+        </Style>
+        
+        <!-- DatePicker Style -->
+        <Style x:Key="DatePickerStyle" TargetType="DatePicker">
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Width" Value="120"/>
+            <Setter Property="Margin" Value="0,0,10,0"/>
+        </Style>
+    </Window.Resources>
+    
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <TextBlock Grid.Row="0" Text="Order Management" 
+                 Style="{StaticResource HeaderStyle}"/>
+        
+        <!-- Search and Filter Area -->
+        <Grid Grid.Row="1" Margin="0,10,0,15">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            
+            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                <TextBlock Text="From:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                <DatePicker x:Name="dpOrdersFrom" Style="{StaticResource DatePickerStyle}"/>
+                <TextBlock Text="To:" VerticalAlignment="Center" Margin="0,0,5,0"/>
+                <DatePicker x:Name="dpOrdersTo" Style="{StaticResource DatePickerStyle}"/>
+            </StackPanel>
+            
+            <Button x:Name="btnSearchOrders" Grid.Column="1"
+                  Content="Search" Width="80"
+                  Style="{StaticResource ActionButtonStyle}"
+                  Click="BtnSearchOrders_Click"/>
+            
+            <Button x:Name="btnCreateOrder" Grid.Column="2"
+                  Content="Create New" Width="90"
+                  Style="{StaticResource ActionButtonStyle}"
+                  Click="BtnCreateOrder_Click"/>
+        </Grid>
+        
+        <!-- Orders DataGrid -->
+        <DataGrid x:Name="dgOrders" Grid.Row="2"
+                Style="{StaticResource CustomDataGridStyle}"
+                SelectionChanged="DgOrders_SelectionChanged">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="Order ID" Binding="{Binding OrderID}" Width="80"/>
+                <DataGridTextColumn Header="Customer" Binding="{Binding CustomerName}" Width="200"/>
+                <DataGridTextColumn Header="Date" Binding="{Binding OrderDate, StringFormat='{}{0:MM/dd/yyyy}'}" Width="120"/>
+                <DataGridTextColumn Header="Total" Binding="{Binding TotalAmount, StringFormat='{}{0:C}'}" Width="120"/>
+                <DataGridTextColumn Header="Items" Binding="{Binding ItemCount}" Width="70"/>
+                <DataGridTextColumn Header="Employee" Binding="{Binding EmployeeName}" Width="150"/>
+                <DataGridTemplateColumn Header="Actions" Width="180">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
+                                <Button Content="View" 
+                                      Style="{StaticResource ActionButtonStyle}"
+                                      Click="BtnViewOrder_Click"/>
+                                <Button Content="Delete" 
+                                      Style="{StaticResource ActionButtonStyle}"
+                                      Background="#F44336"
+                                      Click="BtnDeleteOrder_Click"/>
+                            </StackPanel>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
+            </DataGrid.Columns>
+        </DataGrid>
+        
+        <!-- Status and Buttons -->
+        <Grid Grid.Row="3" Margin="0,15,0,0">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            
+            <TextBlock x:Name="txtOrderStatus" Grid.Column="0" 
+                     VerticalAlignment="Center"
+                     Text="Total orders: 0" 
+                     Foreground="#757575"/>
+            
+            <Button x:Name="btnBack" Grid.Column="1"
+                  Content="Back to Dashboard" 
+                  Width="150"
+                  Style="{StaticResource ActionButtonStyle}"
+                  Background="#3F51B5"
+                  Click="BtnBack_Click"/>
+        </Grid>
+    </Grid>
+</Window>

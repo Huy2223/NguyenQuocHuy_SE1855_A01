@@ -10,5 +10,4 @@ namespace NguyenQuocHuy_SE193304_ASM01
     public partial class App : Application
     {
     }
-
 }

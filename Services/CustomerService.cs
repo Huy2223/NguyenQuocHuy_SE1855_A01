@@ -51,5 +51,15 @@ namespace Services
         {
             return _customerRepository.SearchCustomersByCompany(companyName);
         }
+
+        public Customers AuthenticateByPhone(string phone)
+        {
+            return _customerRepository.AuthenticateByPhone(phone);
+        }
+
+        public Customers GetCustomerByPhone(string phone)
+        {
+            return _customerRepository.GetCustomerByPhone(phone);
+        }
     }
 }

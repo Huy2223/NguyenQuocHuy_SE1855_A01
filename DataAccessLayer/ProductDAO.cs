@@ -31,18 +31,18 @@ namespace DataAccessLayer
             new Products
             {
                 ProductID = 3,
-                ProductName = "Headphones",
-                CategoryID = 2,
-                UnitPrice = 150.00m,
+                ProductName = "Tablet",  // Changed from Headphones to Tablet to match order details
+                CategoryID = 1,
+                UnitPrice = 500.00m,     // Updated price to match order details
                 UnitsInStock = 30
             },
             new Products
             {
                 ProductID = 4,
-                ProductName = "Monitor",
-                CategoryID = 1,
-                UnitPrice = 250.00m,
-                UnitsInStock = 10
+                ProductName = "Headphones", // Moved Headphones to product ID 4
+                CategoryID = 2,
+                UnitPrice = 150.00m,
+                UnitsInStock = 40
             },
             new Products
             {

@@ -51,5 +51,15 @@ namespace Repositories
         {
             return customerDAO.SearchCustomersByCompany(companyName);
         }
+
+        public Customers AuthenticateByPhone(string phone)
+        {
+            return customerDAO.AuthenticateByPhone(phone);
+        }
+
+        public Customers GetCustomerByPhone(string phone)
+        {
+            return customerDAO.GetCustomerByPhone(phone);
+        }
     }
 }
