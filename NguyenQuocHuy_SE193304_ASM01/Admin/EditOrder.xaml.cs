@@ -15,15 +15,16 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using BusinessObject;
 using Services;
-using NguyenQuocHuyWPF.Models; // Import shared models
+using NguyenQuocHuyWPF.Models; // Import the namespace with the shared OrderItemViewModel class
 
 namespace NguyenQuocHuyWPF.Admin
 {
     /// <summary>
-    /// Interaction logic for CreateNewOrder.xaml
+    /// Interaction logic for EditOrder.xaml
     /// </summary>
-    public partial class CreateNewOrder : Window
+    public partial class EditOrder : Window
     {
+        private readonly Orders _order;
         private readonly ICustomerService _customerService;
         private readonly IProductService _productService;
         private readonly IOrderService _orderService;
@@ -36,12 +37,15 @@ namespace NguyenQuocHuyWPF.Admin
         // Currently selected product
         private Products? _selectedProduct;
         
-        // Event to notify parent window when an order is created
-        public event EventHandler<OrderCreatedEventArgs>? OrderCreated;
+        // Event to notify parent window when an order is updated
+        public event EventHandler<OrderUpdatedEventArgs>? OrderUpdated;
         
-        public CreateNewOrder()
+        public EditOrder(Orders order)
         {
             InitializeComponent();
+            
+            // Store the order
+            _order = order ?? throw new ArgumentNullException(nameof(order));
             
             // Initialize services
             _customerService = new CustomerService();
@@ -54,16 +58,24 @@ namespace NguyenQuocHuyWPF.Admin
             _orderItems = new ObservableCollection<OrderItemViewModel>();
             dgOrderItems.ItemsSource = _orderItems;
             
-            // Set default order date to today
-            dpOrderDate.SelectedDate = DateTime.Today;
-            
             // Load data when window is loaded
             this.Loaded += (s, e) =>
             {
+                LoadOrderData();
                 LoadCustomers();
                 LoadProducts();
                 LoadEmployees();
+                LoadOrderItems();
             };
+        }
+        
+        private void LoadOrderData()
+        {
+            // Display order ID (read-only)
+            txtOrderID.Text = _order.OrderID.ToString();
+            
+            // Set order date
+            dpOrderDate.SelectedDate = _order.OrderDate;
         }
         
         private void LoadCustomers()
@@ -73,11 +85,8 @@ namespace NguyenQuocHuyWPF.Admin
                 var customers = _customerService.GetAllCustomers();
                 cmbCustomer.ItemsSource = customers;
                 
-                // Select the first customer by default if available
-                if (customers.Any())
-                {
-                    cmbCustomer.SelectedIndex = 0;
-                }
+                // Select the customer for this order
+                cmbCustomer.SelectedValue = _order.CustomerID;
             }
             catch (Exception ex)
             {
@@ -107,15 +116,51 @@ namespace NguyenQuocHuyWPF.Admin
                 var employees = _employeeService.GetAllEmployees();
                 cmbEmployee.ItemsSource = employees;
                 
-                // Select the first employee by default if available
-                if (employees.Any())
-                {
-                    cmbEmployee.SelectedIndex = 0;
-                }
+                // Select the employee for this order
+                cmbEmployee.SelectedValue = _order.EmployeeID;
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Error loading employees: {ex.Message}", "Error", 
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        
+        private void LoadOrderItems()
+        {
+            try
+            {
+                // Get order details for this order
+                var orderDetails = _orderDetailService.GetOrderDetailsByOrderID(_order.OrderID);
+                
+                // Clear existing items
+                _orderItems.Clear();
+                
+                // Add each item to the collection
+                foreach (var detail in orderDetails)
+                {
+                    // Get product information
+                    var product = _productService.GetProductByID(detail.ProductID);
+                    if (product == null)
+                        continue;
+                        
+                    // Add to collection
+                    _orderItems.Add(new OrderItemViewModel
+                    {
+                        ProductID = product.ProductID,
+                        ProductName = product.ProductName,
+                        UnitPrice = detail.UnitPrice,
+                        Quantity = detail.Quantity,
+                        Discount = detail.Discount
+                    });
+                }
+                
+                // Update order summary
+                UpdateOrderSummary();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading order items: {ex.Message}", "Error", 
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -266,20 +311,15 @@ namespace NguyenQuocHuyWPF.Admin
         
         private void BtnCancel_Click(object sender, RoutedEventArgs e)
         {
-            // Confirm if there are items in the order
-            if (_orderItems.Count > 0)
+            // Confirm if there are changes to the order
+            if (MessageBox.Show("Are you sure you want to cancel editing this order? Any changes will be lost.", 
+                "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
             {
-                if (MessageBox.Show("Are you sure you want to cancel this order?", "Confirm", 
-                    MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.No)
-                {
-                    return;
-                }
+                this.Close();
             }
-            
-            this.Close();
         }
         
-        private void BtnCreateOrder_Click(object sender, RoutedEventArgs e)
+        private void BtnSaveChanges_Click(object sender, RoutedEventArgs e)
         {
             // Hide previous error message
             HideError();
@@ -318,33 +358,27 @@ namespace NguyenQuocHuyWPF.Admin
             
             try
             {
-                // Create order object
-                var order = new Orders
+                // Update order object
+                _order.CustomerID = (int)cmbCustomer.SelectedValue;
+                _order.EmployeeID = (int)cmbEmployee.SelectedValue;
+                _order.OrderDate = dpOrderDate.SelectedDate.Value;
+                
+                // Update order in database
+                _orderService.UpdateOrder(_order);
+                
+                // Delete existing order details
+                var existingDetails = _orderDetailService.GetOrderDetailsByOrderID(_order.OrderID);
+                foreach (var detail in existingDetails)
                 {
-                    CustomerID = (int)cmbCustomer.SelectedValue,
-                    EmployeeID = (int)cmbEmployee.SelectedValue,
-                    OrderDate = dpOrderDate.SelectedDate.Value
-                };
-                
-                // Save order to database
-                _orderService.AddOrder(order);
-                
-                // Retrieve the last added order to get the ID
-                var newOrder = _orderService.GetOrdersByCustomerID(order.CustomerID)
-                    .OrderByDescending(o => o.OrderDate)
-                    .FirstOrDefault();
-                
-                if (newOrder == null)
-                {
-                    throw new Exception("Failed to retrieve the new order information.");
+                    _orderDetailService.DeleteOrderDetail(_order.OrderID, detail.ProductID);
                 }
                 
-                // Create order details
+                // Create new order details
                 foreach (var item in _orderItems)
                 {
                     var orderDetail = new OrderDetails
                     {
-                        OrderID = newOrder.OrderID,
+                        OrderID = _order.OrderID,
                         ProductID = item.ProductID,
                         UnitPrice = item.UnitPrice,
                         Quantity = item.Quantity,
@@ -356,10 +390,10 @@ namespace NguyenQuocHuyWPF.Admin
                 }
                 
                 // Notify parent window
-                OrderCreated?.Invoke(this, new OrderCreatedEventArgs(newOrder));
+                OrderUpdated?.Invoke(this, new OrderUpdatedEventArgs(_order));
                 
                 // Show success message
-                MessageBox.Show($"Order #{newOrder.OrderID} created successfully!", "Success", 
+                MessageBox.Show($"Order #{_order.OrderID} updated successfully!", "Success", 
                     MessageBoxButton.OK, MessageBoxImage.Information);
                 
                 // Close dialog
@@ -367,7 +401,7 @@ namespace NguyenQuocHuyWPF.Admin
             }
             catch (Exception ex)
             {
-                ShowError($"Error creating order: {ex.Message}");
+                ShowError($"Error updating order: {ex.Message}");
             }
         }
         
@@ -384,14 +418,14 @@ namespace NguyenQuocHuyWPF.Admin
         }
     }
     
-    // Event args for order created event
-    public class OrderCreatedEventArgs : EventArgs
+    // Event args for order updated event
+    public class OrderUpdatedEventArgs : EventArgs
     {
-        public Orders NewOrder { get; private set; }
+        public Orders UpdatedOrder { get; private set; }
         
-        public OrderCreatedEventArgs(Orders order)
+        public OrderUpdatedEventArgs(Orders order)
         {
-            NewOrder = order;
+            UpdatedOrder = order;
         }
     }
 }

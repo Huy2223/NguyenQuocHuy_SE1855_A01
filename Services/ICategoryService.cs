@@ -14,8 +14,6 @@ namespace Services
         void AddCategory(Categories category);
         void UpdateCategory(Categories category);
         void DeleteCategory(int categoryID);
-        
-        // Search methods
         IEnumerable<Categories> SearchCategoriesByName(string name);
     }
 }

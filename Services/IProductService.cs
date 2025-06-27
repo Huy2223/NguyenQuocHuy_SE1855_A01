@@ -14,8 +14,6 @@ namespace Services
         void AddProduct(Products product);
         void UpdateProduct(Products product);
         void DeleteProduct(int productID);
-        
-        // Search methods
         IEnumerable<Products> SearchProductsByName(string name);
         IEnumerable<Products> GetProductsByCategoryID(int categoryID);
         IEnumerable<Products> GetProductsByPriceRange(decimal minPrice, decimal maxPrice);

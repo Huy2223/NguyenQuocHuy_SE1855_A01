@@ -1,0 +1,131 @@
+﻿<Window x:Class="NguyenQuocHuyWPF.Admin.EditCustomer"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:NguyenQuocHuyWPF.Admin"
+        mc:Ignorable="d"
+        Title="Edit Customer" Height="500" Width="600"
+        WindowStartupLocation="CenterScreen">
+    
+    <Window.Resources>
+        <!-- Input Control Style -->
+        <Style x:Key="InputControlStyle" TargetType="Control">
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Margin" Value="0,5,0,10"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        
+        <!-- Label Style -->
+        <Style x:Key="LabelStyle" TargetType="Label">
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Padding" Value="0,0,0,5"/>
+        </Style>
+        
+        <!-- Button Style -->
+        <Style x:Key="ActionButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="35"/>
+            <Setter Property="Width" Value="100"/>
+            <Setter Property="Margin" Value="10,0"/>
+            <Setter Property="Background" Value="#4CAF50"/>
+            <Setter Property="Foreground" Value="White"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#388E3C" TargetName="border"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#1B5E20" TargetName="border"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <!-- Cancel Button Style -->
+        <Style x:Key="CancelButtonStyle" BasedOn="{StaticResource ActionButtonStyle}" TargetType="Button">
+            <Setter Property="Background" Value="#9E9E9E"/>
+        </Style>
+    </Window.Resources>
+    
+    <Grid Margin="20">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+        
+        <!-- Header -->
+        <TextBlock Grid.Row="0" Text="Edit Customer" 
+                 FontSize="22" FontWeight="Bold" 
+                 Foreground="#303F9F"
+                 Margin="0,0,0,20"/>
+        
+        <!-- Customer Form -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                
+                <!-- Left Column -->
+                <StackPanel Grid.Column="0" Margin="0,0,10,0">
+                    <Label Content="Company Name *" Style="{StaticResource LabelStyle}"/>
+                    <TextBox x:Name="txtCompanyName" Style="{StaticResource InputControlStyle}"/>
+                    
+                    <Label Content="Contact Name *" Style="{StaticResource LabelStyle}"/>
+                    <TextBox x:Name="txtContactName" Style="{StaticResource InputControlStyle}"/>
+                    
+                    <Label Content="Contact Title" Style="{StaticResource LabelStyle}"/>
+                    <TextBox x:Name="txtContactTitle" Style="{StaticResource InputControlStyle}"/>
+                </StackPanel>
+                
+                <!-- Right Column -->
+                <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                    <Label Content="Phone Number *" Style="{StaticResource LabelStyle}"/>
+                    <TextBox x:Name="txtPhone" Style="{StaticResource InputControlStyle}"
+                           PreviewTextInput="TxtPhone_PreviewTextInput"/>
+                    
+                    <Label Content="Address" Style="{StaticResource LabelStyle}"/>
+                    <TextBox x:Name="txtAddress" Style="{StaticResource InputControlStyle}"
+                           Height="100" TextWrapping="Wrap"
+                           VerticalContentAlignment="Top" 
+                           AcceptsReturn="True"/>
+                </StackPanel>
+            </Grid>
+        </ScrollViewer>
+        
+        <!-- Error Message -->
+        <TextBlock x:Name="txtError" Grid.Row="1" 
+                 VerticalAlignment="Bottom"
+                 Foreground="Red" 
+                 TextWrapping="Wrap"
+                 Visibility="Collapsed"/>
+        
+        <!-- Action Buttons -->
+        <StackPanel Grid.Row="2" Orientation="Horizontal"
+                  HorizontalAlignment="Right" Margin="0,20,0,0">
+            <Button x:Name="btnCancel" Content="Cancel"
+                  Style="{StaticResource CancelButtonStyle}"
+                  Click="BtnCancel_Click"/>
+            
+            <Button x:Name="btnSave" Content="Save Changes"
+                  Style="{StaticResource ActionButtonStyle}"
+                  Click="BtnSave_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

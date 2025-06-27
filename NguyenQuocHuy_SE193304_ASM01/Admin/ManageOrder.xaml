@@ -41,6 +41,56 @@
             </Setter>
         </Style>
         
+        <!-- Edit Button Style -->
+        <Style x:Key="EditButtonStyle" BasedOn="{StaticResource ActionButtonStyle}" TargetType="Button">
+            <Setter Property="Background" Value="#2196F3"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#1976D2" TargetName="border"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#0D47A1" TargetName="border"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
+        <!-- Delete Button Style -->
+        <Style x:Key="DeleteButtonStyle" BasedOn="{StaticResource ActionButtonStyle}" TargetType="Button">
+            <Setter Property="Background" Value="#F44336"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Button}">
+                        <Border x:Name="border" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}"
+                                CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="#D32F2F" TargetName="border"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Background" Value="#B71C1C" TargetName="border"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        
         <!-- Header Style -->
         <Style x:Key="HeaderStyle" TargetType="TextBlock">
             <Setter Property="FontSize" Value="18"/>
@@ -124,16 +174,18 @@
                 <DataGridTextColumn Header="Total" Binding="{Binding TotalAmount, StringFormat='{}{0:C}'}" Width="120"/>
                 <DataGridTextColumn Header="Items" Binding="{Binding ItemCount}" Width="70"/>
                 <DataGridTextColumn Header="Employee" Binding="{Binding EmployeeName}" Width="150"/>
-                <DataGridTemplateColumn Header="Actions" Width="180">
+                <DataGridTemplateColumn Header="Actions" Width="250">
                     <DataGridTemplateColumn.CellTemplate>
                         <DataTemplate>
                             <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
                                 <Button Content="View" 
                                       Style="{StaticResource ActionButtonStyle}"
                                       Click="BtnViewOrder_Click"/>
+                                <Button Content="Edit" 
+                                      Style="{StaticResource EditButtonStyle}"
+                                      Click="BtnEditOrder_Click"/>
                                 <Button Content="Delete" 
-                                      Style="{StaticResource ActionButtonStyle}"
-                                      Background="#F44336"
+                                      Style="{StaticResource DeleteButtonStyle}"
                                       Click="BtnDeleteOrder_Click"/>
                             </StackPanel>
                         </DataTemplate>

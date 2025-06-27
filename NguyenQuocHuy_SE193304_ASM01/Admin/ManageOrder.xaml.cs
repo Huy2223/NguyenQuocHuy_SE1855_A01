@@ -182,6 +182,49 @@ namespace NguyenQuocHuyWPF.Admin
             createOrderDialog.ShowDialog();
         }
 
+        private void BtnEditOrder_Click(object sender, RoutedEventArgs e)
+        {
+            var orderViewModel = (sender as Button)?.DataContext as OrderViewModel;
+            if (orderViewModel != null)
+            {
+                try
+                {
+                    // Get the order to edit
+                    var order = _orderService.GetOrderByID(orderViewModel.OrderID);
+                    if (order == null)
+                    {
+                        MessageBox.Show("Order not found.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
+
+                    // Create and show the EditOrder dialog
+                    var editOrderDialog = new EditOrder(order);
+
+                    // Subscribe to the OrderUpdated event
+                    editOrderDialog.OrderUpdated += (s, args) =>
+                    {
+                        // Update the OrderViewModel with the edited order data
+                        orderViewModel.OrderDate = args.UpdatedOrder.OrderDate;
+                        orderViewModel.CustomerName = GetCustomerName(args.UpdatedOrder.CustomerID);
+                        orderViewModel.EmployeeName = GetEmployeeName(args.UpdatedOrder.EmployeeID);
+                        orderViewModel.TotalAmount = CalculateOrderTotal(args.UpdatedOrder.OrderID);
+                        orderViewModel.ItemCount = GetOrderItemCount(args.UpdatedOrder.OrderID);
+
+                        // Refresh the DataGrid
+                        dgOrders.Items.Refresh();
+                    };
+
+                    editOrderDialog.Owner = this;
+                    editOrderDialog.ShowDialog();
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Error editing order: {ex.Message}", "Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
         private void BtnViewOrder_Click(object sender, RoutedEventArgs e)
         {
             var orderViewModel = (sender as Button)?.DataContext as OrderViewModel;

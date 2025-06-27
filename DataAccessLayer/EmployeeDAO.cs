@@ -28,7 +28,7 @@ namespace DataAccessLayer
                 UserName = "john",
                 Password = "john123",
                 JobTitle = "Sales Manager",
-                IsAdmin = false
+                IsAdmin = true
             },
             new Employees
             {
@@ -37,7 +37,7 @@ namespace DataAccessLayer
                 UserName = "jane",
                 Password = "jane123",
                 JobTitle = "Customer Service Representative",
-                IsAdmin = false
+                IsAdmin = true
             }
         };
 

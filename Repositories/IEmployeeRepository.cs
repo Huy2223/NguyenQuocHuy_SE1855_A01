@@ -14,11 +14,7 @@ namespace Repositories
         void AddEmployee(Employees employee);
         void UpdateEmployee(Employees employee);
         void DeleteEmployee(int employeeID);
-        
-        // Search methods
         IEnumerable<Employees> SearchEmployeesByName(string name);
-        
-        // Authentication
         Employees Authenticate(string username, string password);
     }
 }

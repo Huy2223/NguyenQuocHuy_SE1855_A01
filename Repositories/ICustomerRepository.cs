@@ -14,12 +14,8 @@ namespace Repositories
         void AddCustomer(Customers customer);
         void UpdateCustomer(Customers customer);
         void DeleteCustomer(int customerID);
-        
-        // Search methods
         IEnumerable<Customers> SearchCustomersByName(string name);
         IEnumerable<Customers> SearchCustomersByCompany(string companyName);
-        
-        // Authentication methods
         Customers AuthenticateByPhone(string phone);
         Customers GetCustomerByPhone(string phone);
     }

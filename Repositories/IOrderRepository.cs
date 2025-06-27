@@ -14,8 +14,6 @@ namespace Repositories
         void AddOrder(Orders order);
         void UpdateOrder(Orders order);
         void DeleteOrder(int orderID);
-        
-        // Search methods
         IEnumerable<Orders> GetOrdersByCustomerID(int customerID);
         IEnumerable<Orders> GetOrdersByEmployeeID(int employeeID);
         IEnumerable<Orders> GetOrdersByDate(DateTime startDate, DateTime endDate);

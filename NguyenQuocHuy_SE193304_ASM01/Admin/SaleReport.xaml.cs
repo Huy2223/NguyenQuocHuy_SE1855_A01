@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -13,7 +14,8 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using BusinessObject;
 using Services;
-using NguyenQuocHuyWPF; // Import the namespace containing OrderViewModel
+using Microsoft.Win32;
+using System.IO;
 
 namespace NguyenQuocHuyWPF.Admin
 {
@@ -22,233 +24,415 @@ namespace NguyenQuocHuyWPF.Admin
     /// </summary>
     public partial class SaleReport : Window
     {
-        private readonly IOrderService? _orderService;
-        private readonly ICustomerService? _customerService;
-        private readonly IOrderDetailService? _orderDetailService;
-        private readonly IProductService? _productService;
+        private readonly IOrderService _orderService;
+        private readonly ICustomerService _customerService;
+        private readonly IOrderDetailService _orderDetailService;
+        private readonly IProductService _productService;
+        private ObservableCollection<SalesReportItem> _salesReportItems;
+        private bool _isWindowLoaded = false;
 
         public SaleReport()
         {
-            InitializeComponent();
-            
-            // Initialize services
-            _orderService = new OrderService();
-            _customerService = new CustomerService();
-            _orderDetailService = new OrderDetailService();
-            _productService = new ProductService();
-            
-            // Set default dates for reports after the UI is fully loaded
-            this.Loaded += (s, e) => InitializeReportControls();
+            try
+            {
+                InitializeComponent();
+
+                // Initialize services
+                _orderService = new OrderService();
+                _customerService = new CustomerService();
+                _orderDetailService = new OrderDetailService();
+                _productService = new ProductService();
+
+                // Initialize the observable collection
+                _salesReportItems = new ObservableCollection<SalesReportItem>();
+
+                // Wait for window to load before accessing UI elements
+                this.Loaded += SaleReport_Loaded;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error initializing the Sales Report: {ex.Message}", "Initialization Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
-        
-        private void InitializeReportControls()
+
+        private void SaleReport_Loaded(object sender, RoutedEventArgs e)
         {
             try
             {
-                if (dpReportFrom != null && dpReportTo != null)
+                // Set datacontext and ItemsSource after window is loaded
+                dgSalesReport.ItemsSource = _salesReportItems;
+
+                // Mark window as loaded
+                _isWindowLoaded = true;
+
+                // Select default option in ComboBox
+                if (cmbReportPeriod != null && cmbReportPeriod.Items.Count > 0)
                 {
-                    // Set default dates for reports
-                    dpReportFrom.SelectedDate = DateTime.Today.AddDays(-30); // Last 30 days
-                    dpReportTo.SelectedDate = DateTime.Today;
-                    
-                    // Update combobox selection based on dates
-                    if (cmbReportPeriod != null)
+                    cmbReportPeriod.SelectedIndex = 0;
+                }
+                else
+                {
+                    // Fallback - set date range directly
+                    DateTime now = DateTime.Now;
+                    if (dpReportFrom != null && dpReportTo != null)
                     {
-                        cmbReportPeriod.SelectedIndex = 4; // Custom period
+                        dpReportFrom.SelectedDate = new DateTime(now.Year, now.Month, 1);
+                        dpReportTo.SelectedDate = now;
+                        dpReportFrom.IsEnabled = false;
+                        dpReportTo.IsEnabled = false;
                     }
                 }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error initializing report controls: {ex.Message}", 
-                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                MessageBox.Show($"Error loading the report window: {ex.Message}", "Loading Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        
+
         private void CmbReportPeriod_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             try
             {
-                if (dpReportFrom == null || dpReportTo == null)
+                // Safety check - only proceed if the window is fully loaded
+                if (!_isWindowLoaded) return;
+
+                // Safety check - ensure ComboBox is valid
+                if (sender == null || !(sender is ComboBox) || cmbReportPeriod.SelectedItem == null)
+                    return;
+
+                if (cmbReportPeriod.SelectedItem is ComboBoxItem selectedItem)
                 {
-                    return; // Exit if date pickers aren't initialized yet
+                    string selectedPeriod = selectedItem.Content.ToString();
+                    SetDateRangeForPeriod(selectedPeriod);
                 }
-                
-                // Update date pickers based on selected period
-                DateTime fromDate;
-                DateTime toDate = DateTime.Today;
-                
-                switch (cmbReportPeriod.SelectedIndex)
-                {
-                    case 0: // This Month
-                        fromDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
-                        break;
-                    case 1: // Last Month
-                        var lastMonth = DateTime.Today.AddMonths(-1);
-                        fromDate = new DateTime(lastMonth.Year, lastMonth.Month, 1);
-                        toDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1).AddDays(-1);
-                        break;
-                    case 2: // This Year
-                        fromDate = new DateTime(DateTime.Today.Year, 1, 1);
-                        break;
-                    case 3: // Last Year
-                        fromDate = new DateTime(DateTime.Today.Year - 1, 1, 1);
-                        toDate = new DateTime(DateTime.Today.Year - 1, 12, 31);
-                        break;
-                    case 4: // Custom
-                        // Keep existing custom dates
-                        return;
-                    default:
-                        fromDate = DateTime.Today.AddDays(-30);
-                        break;
-                }
-                
-                // Update date pickers to reflect the selected period
-                dpReportFrom.SelectedDate = fromDate;
-                dpReportTo.SelectedDate = toDate;
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error setting date range: {ex.Message}", "Error", 
+                MessageBox.Show($"Error changing period: {ex.Message}", "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        
+
+        private void SetDateRangeForPeriod(string period)
+        {
+            // Safety checks
+            if (string.IsNullOrEmpty(period) || dpReportFrom == null || dpReportTo == null)
+                return;
+
+            if (!_isWindowLoaded)
+                return;
+
+            try
+            {
+                // Always ensure we have a fresh DateTime.Now value
+                DateTime currentDate = DateTime.Now;
+
+                switch (period)
+                {
+                    case "This Month":
+                        dpReportFrom.SelectedDate = new DateTime(currentDate.Year, currentDate.Month, 1);
+                        dpReportTo.SelectedDate = currentDate;
+                        dpReportFrom.IsEnabled = false;
+                        dpReportTo.IsEnabled = false;
+                        break;
+
+                    case "Last Month":
+                        DateTime lastMonth = currentDate.AddMonths(-1);
+                        dpReportFrom.SelectedDate = new DateTime(lastMonth.Year, lastMonth.Month, 1);
+                        dpReportTo.SelectedDate = new DateTime(lastMonth.Year, lastMonth.Month, DateTime.DaysInMonth(lastMonth.Year, lastMonth.Month));
+                        dpReportFrom.IsEnabled = false;
+                        dpReportTo.IsEnabled = false;
+                        break;
+
+                    case "This Year":
+                        dpReportFrom.SelectedDate = new DateTime(currentDate.Year, 1, 1);
+                        dpReportTo.SelectedDate = currentDate;
+                        dpReportFrom.IsEnabled = false;
+                        dpReportTo.IsEnabled = false;
+                        break;
+
+                    case "Last Year":
+                        int lastYear = currentDate.Year - 1;
+                        dpReportFrom.SelectedDate = new DateTime(lastYear, 1, 1);
+                        dpReportTo.SelectedDate = new DateTime(lastYear, 12, 31);
+                        dpReportFrom.IsEnabled = false;
+                        dpReportTo.IsEnabled = false;
+                        break;
+
+                    case "Custom":
+                        // For custom range, just enable the date pickers but don't set dates
+                        // unless they're not already set
+                        if (!dpReportFrom.SelectedDate.HasValue)
+                            dpReportFrom.SelectedDate = currentDate.AddDays(-30); // Default to last 30 days
+                        if (!dpReportTo.SelectedDate.HasValue)
+                            dpReportTo.SelectedDate = currentDate;
+
+                        dpReportFrom.IsEnabled = true;
+                        dpReportTo.IsEnabled = true;
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error setting date range: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void BtnGenerateReport_Click(object sender, RoutedEventArgs e)
         {
+            // Safety check
+            if (dpReportFrom == null || dpReportTo == null)
+            {
+                MessageBox.Show("Date controls are not properly initialized. Please try restarting the application.",
+                    "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            if (!dpReportFrom.SelectedDate.HasValue || !dpReportTo.SelectedDate.HasValue)
+            {
+                MessageBox.Show("Please select valid date range", "Invalid Date Range",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            if (dpReportTo.SelectedDate < dpReportFrom.SelectedDate)
+            {
+                MessageBox.Show("End date cannot be earlier than start date", "Invalid Date Range",
+                    MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
+
+            GenerateReport();
+        }
+
+        private void GenerateReport()
+        {
             try
             {
-                if (_orderService == null || _customerService == null || _orderDetailService == null) 
+                DateTime startDate = dpReportFrom.SelectedDate.Value;
+                DateTime endDate = dpReportTo.SelectedDate.Value.AddDays(1).AddSeconds(-1); // End of the selected day
+
+                // Get orders in the selected date range
+                var orders = _orderService.GetOrdersByDateRange(startDate, endDate);
+
+                // Clear existing data
+                _salesReportItems.Clear();
+
+                // Calculate total revenue and item count
+                decimal totalRevenue = 0;
+                int totalItems = 0;
+
+                // Dictionary to track product sales for top products report
+                Dictionary<int, ProductSales> productSales = new Dictionary<int, ProductSales>();
+
+                // Process each order
+                foreach (var order in orders)
                 {
-                    MessageBox.Show("Services are not initialized properly.", "Error", 
-                        MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
+                    // Get order details
+                    var orderDetails = _orderDetailService.GetOrderDetailsByOrderID(order.OrderID);
+
+                    // Calculate order total and item count
+                    decimal orderTotal = 0;
+                    int itemCount = 0;
+
+                    foreach (var detail in orderDetails)
+                    {
+                        decimal lineTotal = detail.UnitPrice * detail.Quantity * (1 - (decimal)detail.Discount);
+                        orderTotal += lineTotal;
+                        itemCount += detail.Quantity;
+                        totalItems += detail.Quantity;
+
+                        // Track product sales for top products report
+                        if (!productSales.ContainsKey(detail.ProductID))
+                        {
+                            var product = _productService.GetProductByID(detail.ProductID);
+                            string productName = product != null ? product.ProductName : "Product " + detail.ProductID;
+                            productSales.Add(detail.ProductID, new ProductSales { ProductID = detail.ProductID, ProductName = productName, QuantitySold = 0, Revenue = 0 });
+                        }
+
+                        productSales[detail.ProductID].QuantitySold += detail.Quantity;
+                        productSales[detail.ProductID].Revenue += lineTotal;
+                    }
+
+                    // Get customer name
+                    string customerName = "Unknown";
+                    var customer = _customerService.GetCustomerByID(order.CustomerID);
+                    if (customer != null)
+                    {
+                        customerName = customer.CompanyName;
+                    }
+
+                    // Add to report items
+                    _salesReportItems.Add(new SalesReportItem
+                    {
+                        OrderID = order.OrderID,
+                        OrderDate = order.OrderDate,
+                        CustomerName = customerName,
+                        EmployeeName = "Employee " + order.EmployeeID, // Placeholder - replace with actual employee name
+                        TotalAmount = orderTotal,
+                        ItemCount = itemCount
+                    });
+
+                    totalRevenue += orderTotal;
                 }
-                
-                if (dpReportFrom == null || dpReportTo == null || dgSalesReport == null)
-                {
-                    MessageBox.Show("UI controls are not initialized properly.", "Error", 
-                        MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
-                
-                DateTime fromDate = dpReportFrom.SelectedDate ?? DateTime.Today.AddDays(-30);
-                DateTime toDate = dpReportTo.SelectedDate ?? DateTime.Today;
-                
-                // Get orders for the selected period
-                var orders = _orderService.GetOrdersByDateRange(fromDate, toDate);
-                
-                // Create view models for the report
-                var orderViewModels = orders.Select(o => new OrderViewModel
-                {
-                    OrderID = o.OrderID,
-                    CustomerName = GetCustomerName(o.CustomerID),
-                    OrderDate = o.OrderDate,
-                    EmployeeName = GetEmployeeName(o.EmployeeID),
-                    TotalAmount = CalculateOrderTotal(o.OrderID),
-                    ItemCount = GetOrderItemCount(o.OrderID)
-                }).ToList();
-                
-                // Display in DataGrid
-                dgSalesReport.ItemsSource = orderViewModels;
-                
-                // Calculate and display summary metrics
-                decimal totalRevenue = orderViewModels.Sum(o => o.TotalAmount);
-                int totalOrders = orderViewModels.Count;
-                decimal avgOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
-                int totalItems = orderViewModels.Sum(o => o.ItemCount);
-                
-                if (txtTotalOrders != null) txtTotalOrders.Text = totalOrders.ToString();
-                if (txtTotalRevenue != null) txtTotalRevenue.Text = totalRevenue.ToString("C");
-                if (txtAvgOrderValue != null) txtAvgOrderValue.Text = avgOrderValue.ToString("C");
+
+                // Update summary panel
+                if (txtTotalOrders != null) txtTotalOrders.Text = _salesReportItems.Count.ToString();
+                if (txtTotalRevenue != null) txtTotalRevenue.Text = $"${totalRevenue:0.00}";
                 if (txtTotalItems != null) txtTotalItems.Text = totalItems.ToString();
-                
+
+                // Calculate average order value (avoid divide by zero)
+                if (_salesReportItems.Count > 0)
+                {
+                    decimal avgOrderValue = totalRevenue / _salesReportItems.Count;
+                    if (txtAvgOrderValue != null) txtAvgOrderValue.Text = $"${avgOrderValue:0.00}";
+                }
+                else
+                {
+                    if (txtAvgOrderValue != null) txtAvgOrderValue.Text = "$0.00";
+                }
+
                 // Update status
-                if (txtReportStatus != null)
+                if (txtReportStatus != null && dpReportFrom != null && dpReportTo != null)
                 {
-                    txtReportStatus.Text = $"Report generated for period {fromDate:MM/dd/yyyy} - {toDate:MM/dd/yyyy}";
+                    txtReportStatus.Text = $"Report generated for period: {dpReportFrom.SelectedDate:MM/dd/yyyy} - {dpReportTo.SelectedDate:MM/dd/yyyy}";
                 }
-                
-                // Get top selling products (to be implemented)
-                // This is a placeholder implementation
-                if (lstTopProducts != null)
-                {
-                    lstTopProducts.Items.Clear();
-                }
-                
-                MessageBox.Show($"Report generated successfully. Found {totalOrders} orders in the selected period.", 
-                    "Report Generated", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                // Populate top products list
+                PopulateTopProductsList(productSales);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error generating report: {ex.Message}", "Error", 
+                MessageBox.Show($"Error generating report: {ex.Message}", "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        
-        private string GetCustomerName(int customerId)
+
+        private void PopulateTopProductsList(Dictionary<int, ProductSales> productSales)
         {
             try
             {
-                if (_customerService == null) return "Unknown";
-                
-                var customer = _customerService.GetCustomerByID(customerId);
-                return customer != null ? customer.CompanyName : "Unknown";
+                // Safety check
+                if (lstTopProducts == null) return;
+
+                // Clear existing items
+                lstTopProducts.Items.Clear();
+
+                // Sort products by revenue and take top 10
+                var topProducts = productSales.Values
+                    .OrderByDescending(p => p.Revenue)
+                    .Take(10)
+                    .ToList();
+
+                // Add to list
+                foreach (var product in topProducts)
+                {
+                    ListBoxItem item = new ListBoxItem();
+                    item.Content = $"{product.ProductName} - {product.QuantitySold} units (${product.Revenue:0.00})";
+                    lstTopProducts.Items.Add(item);
+                }
             }
-            catch
+            catch (Exception ex)
             {
-                return "Unknown";
+                MessageBox.Show($"Error populating top products list: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        
-        private string GetEmployeeName(int employeeId)
-        {
-            // TODO: Implement using your employee service
-            return "Employee " + employeeId; // Placeholder
-        }
-        
-        private decimal CalculateOrderTotal(int orderId)
-        {
-            try
-            {
-                if (_orderDetailService == null) return 0;
-                
-                var orderDetails = _orderDetailService.GetOrderDetailsByOrderID(orderId);
-                return orderDetails.Sum(od => od.UnitPrice * od.Quantity * (1 - (decimal)od.Discount));
-            }
-            catch
-            {
-                return 0;
-            }
-        }
-        
-        private int GetOrderItemCount(int orderId)
-        {
-            try
-            {
-                if (_orderDetailService == null) return 0;
-                
-                var orderDetails = _orderDetailService.GetOrderDetailsByOrderID(orderId);
-                return orderDetails.Sum(od => od.Quantity);
-            }
-            catch
-            {
-                return 0;
-            }
-        }
-        
+
         private void BtnExportReport_Click(object sender, RoutedEventArgs e)
         {
-            MessageBox.Show("Export Report functionality will be implemented later.", 
-                "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+            try
+            {
+                if (_salesReportItems == null || _salesReportItems.Count == 0)
+                {
+                    MessageBox.Show("Please generate a report first.", "No Data",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                // Safety check
+                if (dpReportFrom == null || dpReportTo == null)
+                {
+                    MessageBox.Show("Date controls are not properly initialized.", "Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
+                    return;
+                }
+
+                SaveFileDialog saveDialog = new SaveFileDialog();
+                saveDialog.Filter = "CSV Files (*.csv)|*.csv";
+                saveDialog.FileName = $"SalesReport_{dpReportFrom.SelectedDate:yyyyMMdd}_to_{dpReportTo.SelectedDate:yyyyMMdd}";
+
+                if (saveDialog.ShowDialog() == true)
+                {
+                    using (StreamWriter writer = new StreamWriter(saveDialog.FileName))
+                    {
+                        // Write header
+                        writer.WriteLine("Order ID,Date,Customer,Items,Total Amount,Employee");
+
+                        // Write data
+                        foreach (var item in _salesReportItems)
+                        {
+                            writer.WriteLine($"{item.OrderID},{item.OrderDate:MM/dd/yyyy},{item.CustomerName},{item.ItemCount},${item.TotalAmount:0.00},{item.EmployeeName}");
+                        }
+
+                        // Write summary
+                        writer.WriteLine();
+                        writer.WriteLine("SUMMARY");
+                        writer.WriteLine($"Report Period,{dpReportFrom.SelectedDate:MM/dd/yyyy} to {dpReportTo.SelectedDate:MM/dd/yyyy}");
+                        writer.WriteLine($"Total Orders,{txtTotalOrders.Text}");
+                        writer.WriteLine($"Total Revenue,{txtTotalRevenue.Text}");
+                        writer.WriteLine($"Average Order Value,{txtAvgOrderValue.Text}");
+                        writer.WriteLine($"Total Items Sold,{txtTotalItems.Text}");
+                    }
+
+                    MessageBox.Show("Report exported successfully!", "Export Complete",
+                        MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error exporting report: {ex.Message}", "Export Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
-        
+
         private void BtnBack_Click(object sender, RoutedEventArgs e)
         {
-            // Return to AdminDashboard
-            AdminDashBoard adminDashboard = new AdminDashBoard();
-            adminDashboard.Show();
-            this.Close();
+            try
+            {
+                // Go back to admin dashboard
+                AdminDashBoard adminDashboard = new AdminDashBoard();
+                adminDashboard.Show();
+                this.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error returning to dashboard: {ex.Message}", "Navigation Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
+    }
+
+    // Class to represent a sales report item
+    public class SalesReportItem
+    {
+        public int OrderID { get; set; }
+        public DateTime OrderDate { get; set; }
+        public string CustomerName { get; set; } = "";
+        public string EmployeeName { get; set; } = "";
+        public decimal TotalAmount { get; set; }
+        public int ItemCount { get; set; }
+    }
+
+    // Class to track product sales
+    public class ProductSales
+    {
+        public int ProductID { get; set; }
+        public string ProductName { get; set; } = "";
+        public int QuantitySold { get; set; }
+        public decimal Revenue { get; set; }
     }
 }

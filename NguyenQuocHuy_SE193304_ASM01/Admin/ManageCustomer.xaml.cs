@@ -113,9 +113,22 @@ namespace NguyenQuocHuyWPF.Admin
             var customer = (sender as Button)?.DataContext as Customers;
             if (customer != null)
             {
-                // TODO: Implement customer edit dialog
-                MessageBox.Show($"Edit Customer: {customer.ContactName}", 
-                    "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                // Create and show the EditCustomer dialog
+                var editCustomerDialog = new EditCustomer(customer);
+                
+                // Subscribe to the CustomerUpdated event
+                editCustomerDialog.CustomerUpdated += (s, args) =>
+                {
+                    // Find and update the customer in the ObservableCollection
+                    var index = _customers.IndexOf(customer);
+                    if (index >= 0)
+                    {
+                        _customers[index] = args.UpdatedCustomer;
+                    }
+                };
+                
+                editCustomerDialog.Owner = this;
+                editCustomerDialog.ShowDialog();
             }
         }
 

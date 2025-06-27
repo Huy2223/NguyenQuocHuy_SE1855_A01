@@ -124,19 +124,16 @@
             <Setter Property="Margin" Value="0,0,0,8"/>
         </Style>
     </Window.Resources>
-    
+
     <Grid>
-        <!-- Two column layout: Left side image/decoration, Right side login form -->
         <Grid.ColumnDefinitions>
             <ColumnDefinition Width="*"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
         
-        <!-- Left side panel -->
         <Border Grid.Column="0" Background="#3F51B5">
             <Grid>
                 <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <!-- Brand/Logo placeholder -->
                     <Ellipse Width="100" Height="100" Fill="White" Margin="0,0,0,20"/>
                     
                     <TextBlock Text="SALES MANAGEMENT" 
@@ -157,7 +154,7 @@
                 </StackPanel>
                 
                 <!-- Bottom decoration -->
-                <TextBlock Text="© 2023 Sales Management System" 
+                <TextBlock Text=" Sales Management System" 
                            Foreground="#C5CAE9" 
                            HorizontalAlignment="Center"
                            VerticalAlignment="Bottom"

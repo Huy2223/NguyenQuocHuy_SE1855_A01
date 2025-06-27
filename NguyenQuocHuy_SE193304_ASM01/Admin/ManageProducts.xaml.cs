@@ -143,7 +143,7 @@ namespace NguyenQuocHuyWPF.Admin
             var productVM = (sender as Button)?.DataContext as ProductViewModel;
             if (productVM != null)
             {
-                // Convert back to regular product
+                // Convert to regular product
                 var product = new Products
                 {
                     ProductID = productVM.ProductID,
@@ -153,9 +153,25 @@ namespace NguyenQuocHuyWPF.Admin
                     UnitsInStock = productVM.UnitsInStock
                 };
                 
-                // TODO: Implement product edit dialog
-                MessageBox.Show($"Edit Product: {product.ProductName}", 
-                    "Information", MessageBoxButton.OK, MessageBoxImage.Information);
+                // Create and show the EditProduct dialog
+                var editProductDialog = new EditProduct(product);
+                
+                // Subscribe to the ProductUpdated event
+                editProductDialog.ProductUpdated += (s, args) =>
+                {
+                    // Update the ProductViewModel with the changes
+                    productVM.ProductName = args.UpdatedProduct.ProductName;
+                    productVM.CategoryID = args.UpdatedProduct.CategoryID;
+                    productVM.CategoryName = GetCategoryName(args.UpdatedProduct.CategoryID);
+                    productVM.UnitPrice = args.UpdatedProduct.UnitPrice;
+                    productVM.UnitsInStock = args.UpdatedProduct.UnitsInStock;
+                    
+                    // Force UI refresh
+                    dgProducts.Items.Refresh();
+                };
+                
+                editProductDialog.Owner = this;
+                editProductDialog.ShowDialog();
             }
         }
         
