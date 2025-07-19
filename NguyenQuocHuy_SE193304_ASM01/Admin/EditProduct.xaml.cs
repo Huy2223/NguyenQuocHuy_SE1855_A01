@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -24,16 +24,16 @@ namespace NguyenQuocHuyWPF.Admin
     {
         private readonly IProductService _productService;
         private readonly ICategoryService _categoryService;
-        private readonly Products _originalProduct;
+        private readonly Product _originalProduct;
         
-        // Event to notify parent window when a product is updated
+        // Event to notify parent window when a Product is updated
         public event EventHandler<ProductUpdatedEventArgs>? ProductUpdated;
         
-        public EditProduct(Products product)
+        public EditProduct(Product product)
         {
             InitializeComponent();
             
-            // Store the original product
+            // Store the original Product
             _originalProduct = product ?? throw new ArgumentNullException(nameof(product));
             
             // Initialize services
@@ -54,16 +54,16 @@ namespace NguyenQuocHuyWPF.Admin
                 txtUnitsInStock.TextChanged += UpdatePreview;
                 cmbCategory.SelectionChanged += UpdatePreview;
                 
-                // Load categories and product data
+                // Load categories and Product data
                 LoadCategories();
                 LoadProductData();
                 
-                // Set focus to product name field
+                // Set focus to Product name field
                 txtProductName.Focus();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error initializing product editor: {ex.Message}", "Error",
+                MessageBox.Show($"Error initializing Product editor: {ex.Message}", "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -72,7 +72,17 @@ namespace NguyenQuocHuyWPF.Admin
         {
             try
             {
-                var categories = _categoryService.GetAllCategories();
+                var categories = _categoryService.GetAllCategories().ToList(); // Convert to List for better handling
+                
+                // Debug: Check what categories we're loading
+                System.Diagnostics.Debug.WriteLine($"=== LOADING CATEGORIES (Edit) ===");
+                System.Diagnostics.Debug.WriteLine($"Categories count: {categories.Count}");
+                foreach (var cat in categories)
+                {
+                    System.Diagnostics.Debug.WriteLine($"Category: ID={cat.CategoryId}, Name={cat.CategoryName}");
+                }
+                System.Diagnostics.Debug.WriteLine($"=================================");
+                
                 cmbCategory.ItemsSource = categories;
             }
             catch (Exception ex)
@@ -86,22 +96,58 @@ namespace NguyenQuocHuyWPF.Admin
         {
             try
             {
-                // Set fields to original product values
-                txtProductID.Text = _originalProduct.ProductID.ToString();
+                // Set fields to original Product values
+                txtProductID.Text = _originalProduct.ProductId.ToString();
                 txtProductName.Text = _originalProduct.ProductName;
                 txtUnitPrice.Text = _originalProduct.UnitPrice.ToString();
                 txtUnitsInStock.Text = _originalProduct.UnitsInStock.ToString();
                 
-                // Select the appropriate category
-                cmbCategory.SelectedValue = _originalProduct.CategoryID;
+                // Select the appropriate category using multiple approaches
+                SetSelectedCategory(_originalProduct.CategoryId);
                 
                 // Update the preview
                 UpdatePreview(this, EventArgs.Empty);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading product data: {ex.Message}", "Error", 
+                MessageBox.Show($"Error loading Product data: {ex.Message}", "Error", 
                     MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+        
+        private void SetSelectedCategory(int? categoryId)
+        {
+            if (categoryId == null) return;
+            
+            try
+            {
+                // Approach 1: Try SelectedValue first
+                cmbCategory.SelectedValue = categoryId;
+                
+                // Approach 2: If SelectedValue didn't work, find the category manually
+                if (cmbCategory.SelectedItem == null && cmbCategory.ItemsSource != null)
+                {
+                    foreach (Category cat in cmbCategory.ItemsSource)
+                    {
+                        if (cat.CategoryId == categoryId)
+                        {
+                            cmbCategory.SelectedItem = cat;
+                            break;
+                        }
+                    }
+                }
+                
+                // Debug: Show what was selected
+                System.Diagnostics.Debug.WriteLine($"=== CATEGORY SELECTION ===");
+                System.Diagnostics.Debug.WriteLine($"Trying to select CategoryId: {categoryId}");
+                System.Diagnostics.Debug.WriteLine($"Final SelectedIndex: {cmbCategory.SelectedIndex}");
+                System.Diagnostics.Debug.WriteLine($"Final SelectedItem: {cmbCategory.SelectedItem}");
+                System.Diagnostics.Debug.WriteLine($"Final SelectedValue: {cmbCategory.SelectedValue}");
+                System.Diagnostics.Debug.WriteLine($"==========================");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Error setting selected category: {ex.Message}");
             }
         }
         
@@ -109,7 +155,7 @@ namespace NguyenQuocHuyWPF.Admin
         {
             try
             {
-                // Update product name preview
+                // Update Product name preview
                 previewProductName.Text = string.IsNullOrWhiteSpace(txtProductName.Text) 
                     ? "-" 
                     : txtProductName.Text;
@@ -191,6 +237,7 @@ namespace NguyenQuocHuyWPF.Admin
                 return;
             }
             
+            // Validate category selection - simplified check
             if (cmbCategory.SelectedItem == null)
             {
                 ShowError("Category is required.");
@@ -242,14 +289,55 @@ namespace NguyenQuocHuyWPF.Admin
             
             try
             {
-                // Create updated product object, preserving the original ID
-                var updatedProduct = new Products
+                // Debug: Check what's actually selected
+                System.Diagnostics.Debug.WriteLine($"=== CATEGORY DEBUG INFO (Edit) ===");
+                System.Diagnostics.Debug.WriteLine($"SelectedIndex: {cmbCategory.SelectedIndex}");
+                System.Diagnostics.Debug.WriteLine($"SelectedItem: {cmbCategory.SelectedItem}");
+                System.Diagnostics.Debug.WriteLine($"SelectedValue: {cmbCategory.SelectedValue}");
+                
+                if (cmbCategory.SelectedItem is Category selectedCategory)
                 {
-                    ProductID = _originalProduct.ProductID,
+                    System.Diagnostics.Debug.WriteLine($"Selected Category Name: {selectedCategory.CategoryName}");
+                    System.Diagnostics.Debug.WriteLine($"Selected Category ID: {selectedCategory.CategoryId}");
+                }
+                System.Diagnostics.Debug.WriteLine($"===================================");
+                
+                // Try to get category ID using different approaches
+                int categoryId = 0;
+                
+                // Approach 1: Use SelectedItem directly (most reliable)
+                if (cmbCategory.SelectedItem is Category category)
+                {
+                    categoryId = category.CategoryId;
+                }
+                // Approach 2: Try SelectedValue parsing (backup)
+                else if (int.TryParse(cmbCategory.SelectedValue?.ToString(), out int parsedId))
+                {
+                    categoryId = parsedId;
+                }
+                else
+                {
+                    ShowError("Please select a valid category.");
+                    cmbCategory.Focus();
+                    return;
+                }
+                
+                System.Diagnostics.Debug.WriteLine($"Final Category ID: {categoryId}");
+                
+                // Create updated Product object, preserving the original ID
+                var updatedProduct = new Product
+                {
+                    ProductId = _originalProduct.ProductId,
                     ProductName = txtProductName.Text.Trim(),
-                    CategoryID = (int)cmbCategory.SelectedValue,
+                    CategoryId = categoryId,
                     UnitPrice = unitPrice,
-                    UnitsInStock = unitsInStock
+                    UnitsInStock = unitsInStock,
+                    // Preserve other properties from original product
+                    SupplierId = _originalProduct.SupplierId,
+                    QuantityPerUnit = _originalProduct.QuantityPerUnit,
+                    UnitsOnOrder = _originalProduct.UnitsOnOrder,
+                    ReorderLevel = _originalProduct.ReorderLevel,
+                    Discontinued = _originalProduct.Discontinued
                 };
                 
                 // Update in database
@@ -284,12 +372,12 @@ namespace NguyenQuocHuyWPF.Admin
         }
     }
     
-    // Event args for product updated event
+    // Event args for Product updated event
     public class ProductUpdatedEventArgs : EventArgs
     {
-        public Products UpdatedProduct { get; private set; }
+        public Product UpdatedProduct { get; private set; }
         
-        public ProductUpdatedEventArgs(Products product)
+        public ProductUpdatedEventArgs(Product product)
         {
             UpdatedProduct = product;
         }

@@ -17,22 +17,22 @@ namespace Repositories
             productDAO = new ProductDAO();
         }
 
-        public IEnumerable<Products> GetAllProducts()
+        public IEnumerable<Product> GetAllProducts()
         {
             return productDAO.GetAllProducts();
         }
 
-        public Products GetProductByID(int productID)
+        public Product GetProductByID(int productID)
         {
             return productDAO.GetProductByID(productID);
         }
 
-        public void AddProduct(Products product)
+        public void AddProduct(Product product)
         {
             productDAO.AddProduct(product);
         }
 
-        public void UpdateProduct(Products product)
+        public void UpdateProduct(Product product)
         {
             productDAO.UpdateProduct(product);
         }
@@ -42,22 +42,22 @@ namespace Repositories
             productDAO.DeleteProduct(productID);
         }
 
-        public IEnumerable<Products> SearchProductsByName(string name)
+        public IEnumerable<Product> SearchProductsByName(string name)
         {
             return productDAO.SearchProductsByName(name);
         }
 
-        public IEnumerable<Products> GetProductsByCategoryID(int categoryID)
+        public IEnumerable<Product> GetProductsByCategoryID(int categoryID)
         {
             return productDAO.GetProductsByCategoryID(categoryID);
         }
 
-        public IEnumerable<Products> GetProductsByPriceRange(decimal minPrice, decimal maxPrice)
+        public IEnumerable<Product> GetProductsByPriceRange(decimal minPrice, decimal maxPrice)
         {
             return productDAO.GetProductsByPriceRange(minPrice, maxPrice);
         }
 
-        public IEnumerable<Products> GetProductsInStock()
+        public IEnumerable<Product> GetProductsInStock()
         {
             return productDAO.GetProductsInStock();
         }

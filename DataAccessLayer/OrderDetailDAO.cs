@@ -1,4 +1,5 @@
 ﻿using BusinessObject;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,120 +10,56 @@ namespace DataAccessLayer
 {
     public class OrderDetailDAO
     {
-        // Mock data - in a real application, this would be stored in a database
-        private static List<OrderDetails> _orderDetails = new List<OrderDetails>
-        {
-            new OrderDetails
-            {
-                OrderID = 1,
-                ProductID = 1,
-                UnitPrice = 1200.00m,
-                Quantity = 2,
-                Discount = 0.05f
-            },
-            new OrderDetails
-            {
-                OrderID = 1,
-                ProductID = 3,
-                UnitPrice = 150.00m,
-                Quantity = 1,
-                Discount = 0.0f
-            },
-            new OrderDetails
-            {
-                OrderID = 2,
-                ProductID = 2,
-                UnitPrice = 800.00m,
-                Quantity = 1,
-                Discount = 0.0f
-            },
-            new OrderDetails
-            {
-                OrderID = 3,
-                ProductID = 5,
-                UnitPrice = 80.00m,
-                Quantity = 3,
-                Discount = 0.1f
-            },
-            // Order details for the orders of customer with phone 1234567890 (CustomerID = 4)
-            // Order #5
-            new OrderDetails
-            {
-                OrderID = 5,
-                ProductID = 1, // Laptop
-                UnitPrice = 1200.00m,
-                Quantity = 2,
-                Discount = 0.1f
-            },
-            new OrderDetails
-            {
-                OrderID = 5,
-                ProductID = 4, // Headphones
-                UnitPrice = 150.00m,
-                Quantity = 3,
-                Discount = 0.05f
-            },
-            // Order #6
-            new OrderDetails
-            {
-                OrderID = 6,
-                ProductID = 2, // Smartphone
-                UnitPrice = 800.00m,
-                Quantity = 1,
-                Discount = 0.0f
-            },
-            new OrderDetails
-            {
-                OrderID = 6,
-                ProductID = 3, // Tablet
-                UnitPrice = 500.00m,
-                Quantity = 1,
-                Discount = 0.05f
-            },
-            new OrderDetails
-            {
-                OrderID = 6,
-                ProductID = 5, // Keyboard
-                UnitPrice = 80.00m,
-                Quantity = 2,
-                Discount = 0.0f
-            }
-        };
-
         // Get all order details
-        public List<OrderDetails> GetAllOrderDetails()
+        public List<OrderDetail> GetAllOrderDetails()
         {
-            return _orderDetails;
+            using var context = new LucySalesDataContext();
+            return context.OrderDetails
+                .Include(od => od.Order)
+                .Include(od => od.Product)
+                .ToList();
         }
 
         // Get order detail by OrderID and ProductID
-        public OrderDetails GetOrderDetail(int orderID, int productID)
+        public OrderDetail GetOrderDetail(int orderID, int productID)
         {
-            return _orderDetails.FirstOrDefault(o => o.OrderID == orderID && o.ProductID == productID);
+            using var context = new LucySalesDataContext();
+            return context.OrderDetails
+                .Include(od => od.Order)
+                .Include(od => od.Product)
+                .FirstOrDefault(o => o.OrderId == orderID && o.ProductId == productID);
         }
 
         // Get order details by OrderID
-        public List<OrderDetails> GetOrderDetailsByOrderID(int orderID)
+        public List<OrderDetail> GetOrderDetailsByOrderID(int orderID)
         {
-            return _orderDetails.Where(o => o.OrderID == orderID).ToList();
+            using var context = new LucySalesDataContext();
+            return context.OrderDetails
+                .Include(od => od.Order)
+                .Include(od => od.Product)
+                .Where(o => o.OrderId == orderID).ToList();
         }
 
         // Get order details by ProductID
-        public List<OrderDetails> GetOrderDetailsByProductID(int productID)
+        public List<OrderDetail> GetOrderDetailsByProductID(int productID)
         {
-            return _orderDetails.Where(o => o.ProductID == productID).ToList();
+            using var context = new LucySalesDataContext();
+            return context.OrderDetails
+                .Include(od => od.Order)
+                .Include(od => od.Product)
+                .Where(o => o.ProductId == productID).ToList();
         }
 
         // Add a new order detail
-        public void AddOrderDetail(OrderDetails orderDetail)
+        public void AddOrderDetail(OrderDetail orderDetail)
         {
             if (orderDetail == null)
                 throw new ArgumentNullException(nameof(orderDetail));
 
             // Validate required fields
-            if (orderDetail.OrderID <= 0)
+            if (orderDetail.OrderId <= 0)
                 throw new ArgumentException("Order ID must be greater than zero");
-            if (orderDetail.ProductID <= 0)
+            if (orderDetail.ProductId <= 0)
                 throw new ArgumentException("Product ID must be greater than zero");
             if (orderDetail.UnitPrice < 0)
                 throw new ArgumentException("Unit price cannot be negative");
@@ -131,26 +68,29 @@ namespace DataAccessLayer
             if (orderDetail.Discount < 0 || orderDetail.Discount > 1)
                 throw new ArgumentException("Discount must be between 0 and 1");
 
+            using var context = new LucySalesDataContext();
+            
             // Check if the order detail already exists
-            var existingOrderDetail = _orderDetails.FirstOrDefault(o => 
-                o.OrderID == orderDetail.OrderID && o.ProductID == orderDetail.ProductID);
+            var existingOrderDetail = context.OrderDetails.FirstOrDefault(o => 
+                o.OrderId == orderDetail.OrderId && o.ProductId == orderDetail.ProductId);
             
             if (existingOrderDetail != null)
-                throw new ArgumentException($"Order detail with Order ID {orderDetail.OrderID} and Product ID {orderDetail.ProductID} already exists");
+                throw new ArgumentException($"Order detail with Order ID {orderDetail.OrderId} and Product ID {orderDetail.ProductId} already exists");
 
-            _orderDetails.Add(orderDetail);
+            context.OrderDetails.Add(orderDetail);
+            context.SaveChanges();
         }
 
         // Update an existing order detail
-        public void UpdateOrderDetail(OrderDetails orderDetail)
+        public void UpdateOrderDetail(OrderDetail orderDetail)
         {
             if (orderDetail == null)
                 throw new ArgumentNullException(nameof(orderDetail));
 
             // Validate required fields
-            if (orderDetail.OrderID <= 0)
+            if (orderDetail.OrderId <= 0)
                 throw new ArgumentException("Order ID must be greater than zero");
-            if (orderDetail.ProductID <= 0)
+            if (orderDetail.ProductId <= 0)
                 throw new ArgumentException("Product ID must be greater than zero");
             if (orderDetail.UnitPrice < 0)
                 throw new ArgumentException("Unit price cannot be negative");
@@ -159,29 +99,35 @@ namespace DataAccessLayer
             if (orderDetail.Discount < 0 || orderDetail.Discount > 1)
                 throw new ArgumentException("Discount must be between 0 and 1");
 
+            using var context = new LucySalesDataContext();
+            
             // Find existing order detail
-            var existingOrderDetail = _orderDetails.FirstOrDefault(o => 
-                o.OrderID == orderDetail.OrderID && o.ProductID == orderDetail.ProductID);
+            var existingOrderDetail = context.OrderDetails.FirstOrDefault(o => 
+                o.OrderId == orderDetail.OrderId && o.ProductId == orderDetail.ProductId);
             
             if (existingOrderDetail == null)
-                throw new ArgumentException($"Order detail with Order ID {orderDetail.OrderID} and Product ID {orderDetail.ProductID} not found");
+                throw new ArgumentException($"Order detail with Order ID {orderDetail.OrderId} and Product ID {orderDetail.ProductId} not found");
 
             // Update properties
             existingOrderDetail.UnitPrice = orderDetail.UnitPrice;
             existingOrderDetail.Quantity = orderDetail.Quantity;
             existingOrderDetail.Discount = orderDetail.Discount;
+            
+            context.SaveChanges();
         }
 
         // Delete an order detail
         public void DeleteOrderDetail(int orderID, int productID)
         {
-            var orderDetail = _orderDetails.FirstOrDefault(o => 
-                o.OrderID == orderID && o.ProductID == productID);
+            using var context = new LucySalesDataContext();
+            var orderDetail = context.OrderDetails.FirstOrDefault(o => 
+                o.OrderId == orderID && o.ProductId == productID);
             
             if (orderDetail == null)
                 throw new ArgumentException($"Order detail with Order ID {orderID} and Product ID {productID} not found");
 
-            _orderDetails.Remove(orderDetail);
+            context.OrderDetails.Remove(orderDetail);
+            context.SaveChanges();
         }
     }
 }

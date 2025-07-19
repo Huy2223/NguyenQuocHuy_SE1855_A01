@@ -1,4 +1,5 @@
 ﻿using BusinessObject;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,141 +10,127 @@ namespace DataAccessLayer
 {
     public class OrderDAO
     {
-        // Mock data - in a real application, this would be stored in a database
-        private static List<Orders> _orders = new List<Orders>
-        {
-            new Orders
-            {
-                OrderID = 1,
-                CustomerID = 1,
-                EmployeeID = 1,
-                OrderDate = new DateTime(2023, 6, 1)
-            },
-            new Orders
-            {
-                OrderID = 2,
-                CustomerID = 2,
-                EmployeeID = 2,
-                OrderDate = new DateTime(2023, 6, 5)
-            },
-            new Orders
-            {
-                OrderID = 3,
-                CustomerID = 1,
-                EmployeeID = 3,
-                OrderDate = new DateTime(2023, 6, 10)
-            },
-            new Orders
-            {
-                OrderID = 4,
-                CustomerID = 3,
-                EmployeeID = 1,
-                OrderDate = new DateTime(2023, 6, 15)
-            },
-            // Orders for the customer with phone 1234567890 (CustomerID = 4)
-            new Orders
-            {
-                OrderID = 5,
-                CustomerID = 4, // FPTU Technology
-                EmployeeID = 1,
-                OrderDate = DateTime.Now.AddDays(-2)
-            },
-            new Orders
-            {
-                OrderID = 6,
-                CustomerID = 4, // FPTU Technology
-                EmployeeID = 2,
-                OrderDate = DateTime.Now.AddDays(-7)
-            }
-        };
-
-        private static int _nextId = 7;
-
         // Get all orders
-        public List<Orders> GetAllOrders()
+        public List<Order> GetAllOrders()
         {
-            return _orders;
+            using var context = new LucySalesDataContext();
+            return context.Orders
+                .Include(o => o.Customer)
+                .Include(o => o.Employee)
+                .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.Product)
+                .ToList();
         }
 
         // Get order by ID
-        public Orders GetOrderByID(int orderID)
+        public Order GetOrderByID(int orderID)
         {
-            return _orders.FirstOrDefault(o => o.OrderID == orderID);
+            using var context = new LucySalesDataContext();
+            return context.Orders
+                .Include(o => o.Customer)
+                .Include(o => o.Employee)
+                .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.Product)
+                .FirstOrDefault(o => o.OrderId == orderID);
         }
 
         // Add a new order
-        public void AddOrder(Orders order)
+        public void AddOrder(Order order)
         {
             if (order == null)
                 throw new ArgumentNullException(nameof(order));
 
             // Validate required fields
-            if (order.CustomerID <= 0)
+            if (order.CustomerId <= 0)
                 throw new ArgumentException("Customer ID must be greater than zero");
-            if (order.EmployeeID <= 0)
+            if (order.EmployeeId <= 0)
                 throw new ArgumentException("Employee ID must be greater than zero");
             if (order.OrderDate == default)
                 throw new ArgumentException("Order date is required");
 
-            // Set new ID
-            order.OrderID = _nextId++;
-            _orders.Add(order);
+            using var context = new LucySalesDataContext();
+            context.Orders.Add(order);
+            context.SaveChanges();
         }
 
         // Update an existing order
-        public void UpdateOrder(Orders order)
+        public void UpdateOrder(Order order)
         {
             if (order == null)
                 throw new ArgumentNullException(nameof(order));
 
             // Validate required fields
-            if (order.CustomerID <= 0)
+            if (order.CustomerId <= 0)
                 throw new ArgumentException("Customer ID must be greater than zero");
-            if (order.EmployeeID <= 0)
+            if (order.EmployeeId <= 0)
                 throw new ArgumentException("Employee ID must be greater than zero");
             if (order.OrderDate == default)
                 throw new ArgumentException("Order date is required");
 
+            using var context = new LucySalesDataContext();
+            
             // Find existing order
-            var existingOrder = _orders.FirstOrDefault(o => o.OrderID == order.OrderID);
+            var existingOrder = context.Orders.FirstOrDefault(o => o.OrderId == order.OrderId);
             if (existingOrder == null)
-                throw new ArgumentException($"Order with ID {order.OrderID} not found");
+                throw new ArgumentException($"Order with ID {order.OrderId} not found");
 
             // Update properties
-            existingOrder.CustomerID = order.CustomerID;
-            existingOrder.EmployeeID = order.EmployeeID;
+            existingOrder.CustomerId = order.CustomerId;
+            existingOrder.EmployeeId = order.EmployeeId;
             existingOrder.OrderDate = order.OrderDate;
+            
+            context.SaveChanges();
         }
 
         // Delete an order
         public void DeleteOrder(int orderID)
         {
-            var order = _orders.FirstOrDefault(o => o.OrderID == orderID);
+            using var context = new LucySalesDataContext();
+            var order = context.Orders.FirstOrDefault(o => o.OrderId == orderID);
             if (order == null)
                 throw new ArgumentException($"Order with ID {orderID} not found");
 
-            _orders.Remove(order);
+            context.Orders.Remove(order);
+            context.SaveChanges();
         }
 
         // Get orders by customer ID
-        public List<Orders> GetOrdersByCustomerID(int customerID)
+        public List<Order> GetOrdersByCustomerID(int customerID)
         {
-            return _orders.Where(o => o.CustomerID == customerID).ToList();
+            using var context = new LucySalesDataContext();
+            return context.Orders
+                .Include(o => o.Customer)
+                .Include(o => o.Employee)
+                .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.Product)
+                .Where(o => o.CustomerId == customerID).ToList();
         }
 
         // Get orders by employee ID
-        public List<Orders> GetOrdersByEmployeeID(int employeeID)
+        public List<Order> GetOrdersByEmployeeID(int employeeID)
         {
-            return _orders.Where(o => o.EmployeeID == employeeID).ToList();
+            using var context = new LucySalesDataContext();
+            return context.Orders
+                .Include(o => o.Customer)
+                .Include(o => o.Employee)
+                .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.Product)
+                .Where(o => o.EmployeeId == employeeID).ToList();
         }
 
         // Get orders within a date range
-        public List<Orders> GetOrdersByDateRange(DateTime startDate, DateTime endDate)
+        public List<Order> GetOrdersByDateRange(DateTime startDate, DateTime endDate)
         {
+            using var context = new LucySalesDataContext();
             // Ensure the end date is inclusive (including the entire day)
             var adjustedEndDate = endDate.Date.AddDays(1).AddSeconds(-1);
             
-            return _orders.Where(o => o.OrderDate >= startDate && o.OrderDate <= adjustedEndDate).ToList();
+            return context.Orders
+                .Include(o => o.Customer)
+                .Include(o => o.Employee)
+                .Include(o => o.OrderDetails)
+                .ThenInclude(od => od.Product)
+                .Where(o => o.OrderDate >= startDate && o.OrderDate <= adjustedEndDate).ToList();
         }
     }
 }

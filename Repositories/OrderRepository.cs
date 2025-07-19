@@ -17,22 +17,22 @@ namespace Repositories
             orderDAO = new OrderDAO();
         }
 
-        public IEnumerable<Orders> GetAllOrders()
+        public IEnumerable<Order> GetAllOrders()
         {
             return orderDAO.GetAllOrders();
         }
 
-        public Orders GetOrderByID(int orderID)
+        public Order GetOrderByID(int orderID)
         {
             return orderDAO.GetOrderByID(orderID);
         }
 
-        public void AddOrder(Orders order)
+        public void AddOrder(Order order)
         {
             orderDAO.AddOrder(order);
         }
 
-        public void UpdateOrder(Orders order)
+        public void UpdateOrder(Order order)
         {
             orderDAO.UpdateOrder(order);
         }
@@ -42,17 +42,17 @@ namespace Repositories
             orderDAO.DeleteOrder(orderID);
         }
 
-        public IEnumerable<Orders> GetOrdersByCustomerID(int customerID)
+        public IEnumerable<Order> GetOrdersByCustomerID(int customerID)
         {
             return orderDAO.GetOrdersByCustomerID(customerID);
         }
 
-        public IEnumerable<Orders> GetOrdersByEmployeeID(int employeeID)
+        public IEnumerable<Order> GetOrdersByEmployeeID(int employeeID)
         {
             return orderDAO.GetOrdersByEmployeeID(employeeID);
         }
 
-        public IEnumerable<Orders> GetOrdersByDate(DateTime startDate, DateTime endDate)
+        public IEnumerable<Order> GetOrdersByDate(DateTime startDate, DateTime endDate)
         {
             return orderDAO.GetOrdersByDateRange(startDate, endDate);
         }

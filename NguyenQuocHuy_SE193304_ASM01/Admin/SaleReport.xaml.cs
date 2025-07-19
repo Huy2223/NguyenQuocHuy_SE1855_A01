@@ -28,6 +28,7 @@ namespace NguyenQuocHuyWPF.Admin
         private readonly ICustomerService _customerService;
         private readonly IOrderDetailService _orderDetailService;
         private readonly IProductService _productService;
+        private readonly IEmployeeService _employeeService;
         private ObservableCollection<SalesReportItem> _salesReportItems;
         private bool _isWindowLoaded = false;
 
@@ -42,6 +43,7 @@ namespace NguyenQuocHuyWPF.Admin
                 _customerService = new CustomerService();
                 _orderDetailService = new OrderDetailService();
                 _productService = new ProductService();
+                _employeeService = new EmployeeService();
 
                 // Initialize the observable collection
                 _salesReportItems = new ObservableCollection<SalesReportItem>();
@@ -66,23 +68,22 @@ namespace NguyenQuocHuyWPF.Admin
                 // Mark window as loaded
                 _isWindowLoaded = true;
 
-                // Select default option in ComboBox
+                // Set default date range to show ALL data (from 2 years back to now)
+                DateTime now = DateTime.Now;
+                if (dpReportFrom != null && dpReportTo != null)
+                {
+                    dpReportFrom.SelectedDate = now.AddYears(-2); // Show 2 years back by default
+                    dpReportTo.SelectedDate = now;
+                }
+
+                // Select "All Data" option by default
                 if (cmbReportPeriod != null && cmbReportPeriod.Items.Count > 0)
                 {
-                    cmbReportPeriod.SelectedIndex = 0;
+                    cmbReportPeriod.SelectedIndex = 0; // All Data
                 }
-                else
-                {
-                    // Fallback - set date range directly
-                    DateTime now = DateTime.Now;
-                    if (dpReportFrom != null && dpReportTo != null)
-                    {
-                        dpReportFrom.SelectedDate = new DateTime(now.Year, now.Month, 1);
-                        dpReportTo.SelectedDate = now;
-                        dpReportFrom.IsEnabled = false;
-                        dpReportTo.IsEnabled = false;
-                    }
-                }
+
+                // Automatically generate report for ALL data when window loads
+                GenerateAllDataReport();
             }
             catch (Exception ex)
             {
@@ -131,11 +132,21 @@ namespace NguyenQuocHuyWPF.Admin
 
                 switch (period)
                 {
+                    case "All Data":
+                        // Show all available data (2 years back)
+                        dpReportFrom.SelectedDate = currentDate.AddYears(-2);
+                        dpReportTo.SelectedDate = currentDate;
+                        dpReportFrom.IsEnabled = false;
+                        dpReportTo.IsEnabled = false;
+                        GenerateAllDataReport();
+                        break;
+
                     case "This Month":
                         dpReportFrom.SelectedDate = new DateTime(currentDate.Year, currentDate.Month, 1);
                         dpReportTo.SelectedDate = currentDate;
                         dpReportFrom.IsEnabled = false;
                         dpReportTo.IsEnabled = false;
+                        GenerateReport();
                         break;
 
                     case "Last Month":
@@ -144,6 +155,7 @@ namespace NguyenQuocHuyWPF.Admin
                         dpReportTo.SelectedDate = new DateTime(lastMonth.Year, lastMonth.Month, DateTime.DaysInMonth(lastMonth.Year, lastMonth.Month));
                         dpReportFrom.IsEnabled = false;
                         dpReportTo.IsEnabled = false;
+                        GenerateReport();
                         break;
 
                     case "This Year":
@@ -151,6 +163,7 @@ namespace NguyenQuocHuyWPF.Admin
                         dpReportTo.SelectedDate = currentDate;
                         dpReportFrom.IsEnabled = false;
                         dpReportTo.IsEnabled = false;
+                        GenerateReport();
                         break;
 
                     case "Last Year":
@@ -159,6 +172,7 @@ namespace NguyenQuocHuyWPF.Admin
                         dpReportTo.SelectedDate = new DateTime(lastYear, 12, 31);
                         dpReportFrom.IsEnabled = false;
                         dpReportTo.IsEnabled = false;
+                        GenerateReport();
                         break;
 
                     case "Custom":
@@ -208,6 +222,135 @@ namespace NguyenQuocHuyWPF.Admin
             GenerateReport();
         }
 
+        private void GenerateAllDataReport()
+        {
+            try
+            {
+                // Get ALL orders without date filtering
+                var orders = _orderService.GetAllOrders();
+
+                // Clear existing data
+                _salesReportItems.Clear();
+
+                // Calculate total revenue and item count
+                decimal totalRevenue = 0;
+                int totalItems = 0;
+
+                // Dictionary to track product sales for top product report
+                Dictionary<int, ProductSales> productSales = new Dictionary<int, ProductSales>();
+
+                // Process each order
+                foreach (var order in orders)
+                {
+                    // Get order details
+                    var orderDetails = _orderDetailService.GetOrderDetailsByOrderID(order.OrderId);
+
+                    // Calculate order total and item count
+                    decimal orderTotal = 0;
+                    int itemCount = 0;
+
+                    foreach (var detail in orderDetails)
+                    {
+                        decimal lineTotal = detail.UnitPrice * detail.Quantity * (1 - (decimal)detail.Discount);
+                        orderTotal += lineTotal;
+                        itemCount += detail.Quantity;
+                        totalItems += detail.Quantity;
+
+                        // Track product sales for top product report
+                        if (!productSales.ContainsKey(detail.ProductId))
+                        {
+                            var product = _productService.GetProductByID(detail.ProductId);
+                            string productName = product != null ? product.ProductName : "Product " + detail.ProductId;
+                            productSales.Add(detail.ProductId, new ProductSales 
+                            { 
+                                ProductId = detail.ProductId, 
+                                ProductName = productName, 
+                                QuantitySold = 0, 
+                                Revenue = 0 
+                            });
+                        }
+
+                        productSales[detail.ProductId].QuantitySold += detail.Quantity;
+                        productSales[detail.ProductId].Revenue += lineTotal;
+                    }
+
+                    // Get customer name
+                    string customerName = "Unknown";
+                    var customer = _customerService.GetCustomerByID(order.CustomerId);
+                    if (customer != null)
+                    {
+                        customerName = customer.CompanyName;
+                    }
+
+                    // Get employee name
+                    string employeeName = "Employee " + order.EmployeeId;
+                    try
+                    {
+                        var employee = _employeeService.GetEmployeeByID(order.EmployeeId);
+                        if (employee != null)
+                        {
+                            employeeName = employee.Name;
+                        }
+                    }
+                    catch
+                    {
+                        // Keep default employee name if service fails
+                    }
+
+                    // Add to report items
+                    _salesReportItems.Add(new SalesReportItem
+                    {
+                        OrderId = order.OrderId,
+                        OrderDate = order.OrderDate,
+                        CustomerName = customerName,
+                        EmployeeName = employeeName,
+                        TotalAmount = orderTotal,
+                        ItemCount = itemCount
+                    });
+
+                    totalRevenue += orderTotal;
+                }
+
+                // Sort by newest orders first
+                var sortedItems = _salesReportItems.OrderByDescending(o => o.OrderDate).ToList();
+                _salesReportItems.Clear();
+                foreach (var item in sortedItems)
+                {
+                    _salesReportItems.Add(item);
+                }
+
+                // Update summary panel
+                if (txtTotalOrders != null) txtTotalOrders.Text = _salesReportItems.Count.ToString();
+                if (txtTotalRevenue != null) txtTotalRevenue.Text = $"${totalRevenue:0.00}";
+                if (txtTotalItems != null) txtTotalItems.Text = totalItems.ToString();
+
+                // Calculate average order value (avoid divide by zero)
+                if (_salesReportItems.Count > 0)
+                {
+                    decimal avgOrderValue = totalRevenue / _salesReportItems.Count;
+                    if (txtAvgOrderValue != null) txtAvgOrderValue.Text = $"${avgOrderValue:0.00}";
+                }
+                else
+                {
+                    if (txtAvgOrderValue != null) txtAvgOrderValue.Text = "$0.00";
+                }
+
+                // Update status
+                if (txtReportStatus != null)
+                {
+                    txtReportStatus.Text = $"Showing all orders | Total: {_salesReportItems.Count} orders";
+                }
+
+                // Populate top products list
+                PopulateTopProductsList(productSales);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error generating all data report: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void GenerateReport()
         {
             try
@@ -225,14 +368,14 @@ namespace NguyenQuocHuyWPF.Admin
                 decimal totalRevenue = 0;
                 int totalItems = 0;
 
-                // Dictionary to track product sales for top products report
+                // Dictionary to track product sales for top product report
                 Dictionary<int, ProductSales> productSales = new Dictionary<int, ProductSales>();
 
                 // Process each order
                 foreach (var order in orders)
                 {
                     // Get order details
-                    var orderDetails = _orderDetailService.GetOrderDetailsByOrderID(order.OrderID);
+                    var orderDetails = _orderDetailService.GetOrderDetailsByOrderID(order.OrderId);
 
                     // Calculate order total and item count
                     decimal orderTotal = 0;
@@ -245,33 +388,54 @@ namespace NguyenQuocHuyWPF.Admin
                         itemCount += detail.Quantity;
                         totalItems += detail.Quantity;
 
-                        // Track product sales for top products report
-                        if (!productSales.ContainsKey(detail.ProductID))
+                        // Track product sales for top product report
+                        if (!productSales.ContainsKey(detail.ProductId))
                         {
-                            var product = _productService.GetProductByID(detail.ProductID);
-                            string productName = product != null ? product.ProductName : "Product " + detail.ProductID;
-                            productSales.Add(detail.ProductID, new ProductSales { ProductID = detail.ProductID, ProductName = productName, QuantitySold = 0, Revenue = 0 });
+                            var product = _productService.GetProductByID(detail.ProductId);
+                            string productName = product != null ? product.ProductName : "Product " + detail.ProductId;
+                            productSales.Add(detail.ProductId, new ProductSales 
+                            { 
+                                ProductId = detail.ProductId, 
+                                ProductName = productName, 
+                                QuantitySold = 0, 
+                                Revenue = 0 
+                            });
                         }
 
-                        productSales[detail.ProductID].QuantitySold += detail.Quantity;
-                        productSales[detail.ProductID].Revenue += lineTotal;
+                        productSales[detail.ProductId].QuantitySold += detail.Quantity;
+                        productSales[detail.ProductId].Revenue += lineTotal;
                     }
 
                     // Get customer name
                     string customerName = "Unknown";
-                    var customer = _customerService.GetCustomerByID(order.CustomerID);
+                    var customer = _customerService.GetCustomerByID(order.CustomerId);
                     if (customer != null)
                     {
                         customerName = customer.CompanyName;
                     }
 
+                    // Get employee name
+                    string employeeName = "Employee " + order.EmployeeId;
+                    try
+                    {
+                        var employee = _employeeService.GetEmployeeByID(order.EmployeeId);
+                        if (employee != null)
+                        {
+                            employeeName = employee.Name;
+                        }
+                    }
+                    catch
+                    {
+                        // Keep default employee name if service fails
+                    }
+
                     // Add to report items
                     _salesReportItems.Add(new SalesReportItem
                     {
-                        OrderID = order.OrderID,
+                        OrderId = order.OrderId,
                         OrderDate = order.OrderDate,
                         CustomerName = customerName,
-                        EmployeeName = "Employee " + order.EmployeeID, // Placeholder - replace with actual employee name
+                        EmployeeName = employeeName,
                         TotalAmount = orderTotal,
                         ItemCount = itemCount
                     });
@@ -337,7 +501,7 @@ namespace NguyenQuocHuyWPF.Admin
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error populating top products list: {ex.Message}", "Error",
+                MessageBox.Show($"Error populating top product list: {ex.Message}", "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
@@ -363,7 +527,7 @@ namespace NguyenQuocHuyWPF.Admin
 
                 SaveFileDialog saveDialog = new SaveFileDialog();
                 saveDialog.Filter = "CSV Files (*.csv)|*.csv";
-                saveDialog.FileName = $"SalesReport_{dpReportFrom.SelectedDate:yyyyMMdd}_to_{dpReportTo.SelectedDate:yyyyMMdd}";
+                saveDialog.FileName = $"SalesReport_{DateTime.Now:yyyyMMdd_HHmmss}";
 
                 if (saveDialog.ShowDialog() == true)
                 {
@@ -375,17 +539,16 @@ namespace NguyenQuocHuyWPF.Admin
                         // Write data
                         foreach (var item in _salesReportItems)
                         {
-                            writer.WriteLine($"{item.OrderID},{item.OrderDate:MM/dd/yyyy},{item.CustomerName},{item.ItemCount},${item.TotalAmount:0.00},{item.EmployeeName}");
+                            writer.WriteLine($"{item.OrderId},{item.OrderDate:MM/dd/yyyy},{item.CustomerName},{item.ItemCount},${item.TotalAmount:0.00},{item.EmployeeName}");
                         }
 
                         // Write summary
                         writer.WriteLine();
                         writer.WriteLine("SUMMARY");
-                        writer.WriteLine($"Report Period,{dpReportFrom.SelectedDate:MM/dd/yyyy} to {dpReportTo.SelectedDate:MM/dd/yyyy}");
-                        writer.WriteLine($"Total Orders,{txtTotalOrders.Text}");
-                        writer.WriteLine($"Total Revenue,{txtTotalRevenue.Text}");
-                        writer.WriteLine($"Average Order Value,{txtAvgOrderValue.Text}");
-                        writer.WriteLine($"Total Items Sold,{txtTotalItems.Text}");
+                        writer.WriteLine($"Total Orders,{txtTotalOrders?.Text}");
+                        writer.WriteLine($"Total Revenue,{txtTotalRevenue?.Text}");
+                        writer.WriteLine($"Average Order Value,{txtAvgOrderValue?.Text}");
+                        writer.WriteLine($"Total Items Sold,{txtTotalItems?.Text}");
                     }
 
                     MessageBox.Show("Report exported successfully!", "Export Complete",
@@ -419,7 +582,7 @@ namespace NguyenQuocHuyWPF.Admin
     // Class to represent a sales report item
     public class SalesReportItem
     {
-        public int OrderID { get; set; }
+        public int OrderId { get; set; }
         public DateTime OrderDate { get; set; }
         public string CustomerName { get; set; } = "";
         public string EmployeeName { get; set; } = "";
@@ -430,9 +593,10 @@ namespace NguyenQuocHuyWPF.Admin
     // Class to track product sales
     public class ProductSales
     {
-        public int ProductID { get; set; }
+        public int ProductId { get; set; }
         public string ProductName { get; set; } = "";
         public int QuantitySold { get; set; }
         public decimal Revenue { get; set; }
     }
 }
+

@@ -17,22 +17,22 @@ namespace Services
             _categoryRepository = new CategoryRepository();
         }
 
-        public IEnumerable<Categories> GetAllCategories()
+        public IEnumerable<Category> GetAllCategories()
         {
             return _categoryRepository.GetAllCategories();
         }
 
-        public Categories GetCategoryByID(int categoryID)
+        public Category GetCategoryByID(int categoryID)
         {
             return _categoryRepository.GetCategoryByID(categoryID);
         }
 
-        public void AddCategory(Categories category)
+        public void AddCategory(Category category)
         {
             _categoryRepository.AddCategory(category);
         }
 
-        public void UpdateCategory(Categories category)
+        public void UpdateCategory(Category category)
         {
             _categoryRepository.UpdateCategory(category);
         }
@@ -42,7 +42,7 @@ namespace Services
             _categoryRepository.DeleteCategory(categoryID);
         }
 
-        public IEnumerable<Categories> SearchCategoriesByName(string name)
+        public IEnumerable<Category> SearchCategoriesByName(string name)
         {
             return _categoryRepository.SearchCategoriesByName(name);
         }

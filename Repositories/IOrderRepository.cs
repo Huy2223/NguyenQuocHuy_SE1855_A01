@@ -9,13 +9,13 @@ namespace Repositories
 {
     public interface IOrderRepository
     {
-        IEnumerable<Orders> GetAllOrders();
-        Orders GetOrderByID(int orderID);
-        void AddOrder(Orders order);
-        void UpdateOrder(Orders order);
+        IEnumerable<Order> GetAllOrders();
+        Order GetOrderByID(int orderID);
+        void AddOrder(Order order);
+        void UpdateOrder(Order order);
         void DeleteOrder(int orderID);
-        IEnumerable<Orders> GetOrdersByCustomerID(int customerID);
-        IEnumerable<Orders> GetOrdersByEmployeeID(int employeeID);
-        IEnumerable<Orders> GetOrdersByDate(DateTime startDate, DateTime endDate);
+        IEnumerable<Order> GetOrdersByCustomerID(int customerID);
+        IEnumerable<Order> GetOrdersByEmployeeID(int employeeID);
+        IEnumerable<Order> GetOrdersByDate(DateTime startDate, DateTime endDate);
     }
 }

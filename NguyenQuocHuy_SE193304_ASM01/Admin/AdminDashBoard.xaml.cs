@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -18,7 +18,8 @@ using NguyenQuocHuyWPF.Admin;
 namespace NguyenQuocHuyWPF
 {
     /// <summary>
-    /// Interaction logic for AdminDashBoard.xaml
+    /// Interaction logic for Employee Dashboard (formerly AdminDashBoard.xaml)
+    /// All employees have full access to system functionality
     /// </summary>
     public partial class AdminDashBoard : Window
     {
@@ -27,9 +28,9 @@ namespace NguyenQuocHuyWPF
         private readonly IOrderService? _orderService;
         private readonly IOrderDetailService? _orderDetailService;
         
-        private Employees? _currentUser;
+        private Employee? _currentUser;
 
-        public AdminDashBoard(Employees loggedInEmployee)
+        public AdminDashBoard(Employee loggedInEmployee)
         {
             InitializeComponent();
             
@@ -45,8 +46,11 @@ namespace NguyenQuocHuyWPF
             _orderService = new OrderService();
             _orderDetailService = new OrderDetailService();
             
-            // Set the admin name in the UI
-            AdminNameText.Text = _currentUser.Name;
+            // Set the employee name in the UI (formerly called AdminNameText)
+            if (AdminNameText != null)
+            {
+                AdminNameText.Text = _currentUser.Name;
+            }
         }
 
         public AdminDashBoard() // Default constructor for design-time support
@@ -55,7 +59,7 @@ namespace NguyenQuocHuyWPF
             
             // Try to get current user from application properties
             if (Application.Current.Properties.Contains("CurrentUser") && 
-                Application.Current.Properties["CurrentUser"] is Employees employee)
+                Application.Current.Properties["CurrentUser"] is Employee employee)
             {
                 _currentUser = employee;
                 
@@ -65,7 +69,7 @@ namespace NguyenQuocHuyWPF
                 _orderService = new OrderService();
                 _orderDetailService = new OrderDetailService();
                 
-                // Set the admin name in the UI if possible
+                // Set the employee name in the UI if possible
                 if (AdminNameText != null && _currentUser != null)
                 {
                     AdminNameText.Text = _currentUser.Name;
@@ -73,7 +77,7 @@ namespace NguyenQuocHuyWPF
             }
         }
 
-        #region Navigation Methods
+        #region Navigation Methods - All employees can access these features
         
         private void BtnCustomers_Click(object sender, RoutedEventArgs e)
         {
@@ -119,7 +123,6 @@ namespace NguyenQuocHuyWPF
                 }
                 
                 // Open login window and close this window
-                // Note: Adjust namespace as needed
                 NguyenQuocHuy_SE193304_ASM01.Login loginWindow = new NguyenQuocHuy_SE193304_ASM01.Login();
                 loginWindow.Show();
                 this.Close();
@@ -129,10 +132,10 @@ namespace NguyenQuocHuyWPF
         #endregion
     }
 
-    // ViewModel for Orders display
+    // ViewModel for BusinessObject.Order display
     public class OrderViewModel
     {
-        public int OrderID { get; set; }
+        public int OrderId { get; set; }
         public string CustomerName { get; set; } = "";
         public DateTime OrderDate { get; set; }
         public string EmployeeName { get; set; } = "";

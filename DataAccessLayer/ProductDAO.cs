@@ -1,4 +1,5 @@
 ﻿using BusinessObject;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,67 +10,22 @@ namespace DataAccessLayer
 {
     public class ProductDAO
     {
-        // Mock data - in a real application, this would be stored in a database
-        private static List<Products> _products = new List<Products>
-        {
-            new Products
-            {
-                ProductID = 1,
-                ProductName = "Laptop",
-                CategoryID = 1,
-                UnitPrice = 1200.00m,
-                UnitsInStock = 15
-            },
-            new Products
-            {
-                ProductID = 2,
-                ProductName = "Smartphone",
-                CategoryID = 1,
-                UnitPrice = 800.00m,
-                UnitsInStock = 25
-            },
-            new Products
-            {
-                ProductID = 3,
-                ProductName = "Tablet",  // Changed from Headphones to Tablet to match order details
-                CategoryID = 1,
-                UnitPrice = 500.00m,     // Updated price to match order details
-                UnitsInStock = 30
-            },
-            new Products
-            {
-                ProductID = 4,
-                ProductName = "Headphones", // Moved Headphones to product ID 4
-                CategoryID = 2,
-                UnitPrice = 150.00m,
-                UnitsInStock = 40
-            },
-            new Products
-            {
-                ProductID = 5,
-                ProductName = "Keyboard",
-                CategoryID = 2,
-                UnitPrice = 80.00m,
-                UnitsInStock = 20
-            }
-        };
-
-        private static int _nextId = 6;
-
         // Get all products
-        public List<Products> GetAllProducts()
+        public List<Product> GetAllProducts()
         {
-            return _products;
+            using var context = new LucySalesDataContext();
+            return context.Products.Include(p => p.Category).ToList();
         }
 
         // Get product by ID
-        public Products GetProductByID(int productID)
+        public Product GetProductByID(int productID)
         {
-            return _products.FirstOrDefault(p => p.ProductID == productID);
+            using var context = new LucySalesDataContext();
+            return context.Products.Include(p => p.Category).FirstOrDefault(p => p.ProductId == productID);
         }
 
         // Add a new product
-        public void AddProduct(Products product)
+        public void AddProduct(Product product)
         {
             if (product == null)
                 throw new ArgumentNullException(nameof(product));
@@ -82,13 +38,13 @@ namespace DataAccessLayer
             if (product.UnitsInStock < 0)
                 throw new ArgumentException("Units in stock cannot be negative");
 
-            // Set new ID
-            product.ProductID = _nextId++;
-            _products.Add(product);
+            using var context = new LucySalesDataContext();
+            context.Products.Add(product);
+            context.SaveChanges();
         }
 
         // Update an existing product
-        public void UpdateProduct(Products product)
+        public void UpdateProduct(Product product)
         {
             if (product == null)
                 throw new ArgumentNullException(nameof(product));
@@ -101,53 +57,72 @@ namespace DataAccessLayer
             if (product.UnitsInStock < 0)
                 throw new ArgumentException("Units in stock cannot be negative");
 
+            using var context = new LucySalesDataContext();
+            
             // Find existing product
-            var existingProduct = _products.FirstOrDefault(p => p.ProductID == product.ProductID);
+            var existingProduct = context.Products.FirstOrDefault(p => p.ProductId == product.ProductId);
             if (existingProduct == null)
-                throw new ArgumentException($"Product with ID {product.ProductID} not found");
+                throw new ArgumentException($"Product with ID {product.ProductId} not found");
 
             // Update properties
             existingProduct.ProductName = product.ProductName;
-            existingProduct.CategoryID = product.CategoryID;
+            existingProduct.CategoryId = product.CategoryId;
             existingProduct.UnitPrice = product.UnitPrice;
             existingProduct.UnitsInStock = product.UnitsInStock;
+            existingProduct.SupplierId = product.SupplierId;
+            existingProduct.QuantityPerUnit = product.QuantityPerUnit;
+            existingProduct.UnitsOnOrder = product.UnitsOnOrder;
+            existingProduct.ReorderLevel = product.ReorderLevel;
+            existingProduct.Discontinued = product.Discontinued;
+            
+            context.SaveChanges();
         }
 
         // Delete a product
         public void DeleteProduct(int productID)
         {
-            var product = _products.FirstOrDefault(p => p.ProductID == productID);
+            using var context = new LucySalesDataContext();
+            var product = context.Products.FirstOrDefault(p => p.ProductId == productID);
             if (product == null)
                 throw new ArgumentException($"Product with ID {productID} not found");
 
-            _products.Remove(product);
+            context.Products.Remove(product);
+            context.SaveChanges();
         }
 
         // Search products by name
-        public List<Products> SearchProductsByName(string name)
+        public List<Product> SearchProductsByName(string name)
         {
+            using var context = new LucySalesDataContext();
             if (string.IsNullOrWhiteSpace(name))
-                return _products;
+                return context.Products.Include(p => p.Category).ToList();
 
-            return _products.Where(p => p.ProductName.Contains(name, StringComparison.OrdinalIgnoreCase)).ToList();
+            return context.Products.Include(p => p.Category)
+                .Where(p => p.ProductName.Contains(name)).ToList();
         }
 
         // Get products by category ID
-        public List<Products> GetProductsByCategoryID(int categoryID)
+        public List<Product> GetProductsByCategoryID(int categoryID)
         {
-            return _products.Where(p => p.CategoryID == categoryID).ToList();
+            using var context = new LucySalesDataContext();
+            return context.Products.Include(p => p.Category)
+                .Where(p => p.CategoryId == categoryID).ToList();
         }
 
         // Get products within price range
-        public List<Products> GetProductsByPriceRange(decimal minPrice, decimal maxPrice)
+        public List<Product> GetProductsByPriceRange(decimal minPrice, decimal maxPrice)
         {
-            return _products.Where(p => p.UnitPrice >= minPrice && p.UnitPrice <= maxPrice).ToList();
+            using var context = new LucySalesDataContext();
+            return context.Products.Include(p => p.Category)
+                .Where(p => p.UnitPrice >= minPrice && p.UnitPrice <= maxPrice).ToList();
         }
 
         // Get products in stock
-        public List<Products> GetProductsInStock()
+        public List<Product> GetProductsInStock()
         {
-            return _products.Where(p => p.UnitsInStock > 0).ToList();
+            using var context = new LucySalesDataContext();
+            return context.Products.Include(p => p.Category)
+                .Where(p => p.UnitsInStock > 0).ToList();
         }
     }
 }

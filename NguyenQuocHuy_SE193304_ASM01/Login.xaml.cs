@@ -15,6 +15,7 @@ using System.Windows.Shapes;
 using BusinessObject;
 using Services;
 using NguyenQuocHuyWPF;
+using NguyenQuocHuyWPF.Admin;
 
 namespace NguyenQuocHuy_SE193304_ASM01
 {
@@ -57,7 +58,7 @@ namespace NguyenQuocHuy_SE193304_ASM01
             }
             else
             {
-                // Default to employee login if neither is checked
+                // Default to Employee login if neither is checked
                 if (rbEmployee != null)
                 {
                     rbEmployee.IsChecked = true;
@@ -138,6 +139,7 @@ namespace NguyenQuocHuy_SE193304_ASM01
             if (txtUsername == null || txtPassword == null || btnEmployeeLogin == null)
                 return;
 
+            // Get values from WPF textboxes
             string username = txtUsername.Text.Trim();
             string password = txtPassword.Password.Trim();
 
@@ -152,60 +154,48 @@ namespace NguyenQuocHuy_SE193304_ASM01
             {
                 // Show loading state
                 btnEmployeeLogin.IsEnabled = false;
-                btnEmployeeLogin.Content = "LOGGING IN...";
+                btnEmployeeLogin.Content = "🔄 LOGGING IN...";
 
-                // Authenticate employee
-                Employees employee = _employeeService.Login(username, password);
+                // Authenticate Employee - EmployeeDAO.Authenticate() will query database using FirstOrDefault
+                var employeeResult = _employeeService.Login(username, password);
 
-                if (employee != null)
+                if (employeeResult != null)
                 {
-                    // Authentication successful
+                    // Authentication successful - employeeResult contains actual data from database
                     HideError();
 
-                    // Store logged in user information in application-wide state
-                    App.Current.Properties["CurrentUser"] = employee;
+                    // Store logged in user information
+                    App.Current.Properties["CurrentUser"] = employeeResult;
                     App.Current.Properties["UserType"] = "Employee";
 
-                    // Brief welcome message
-                    MessageBox.Show($"Welcome, {employee.Name}!\n" +
-                                    $"Role: {(employee.IsAdmin ? "Administrator" : employee.JobTitle)}",
+                    // Show welcome message - all employees have full access
+                    MessageBox.Show($"🎉 Welcome back, {employeeResult.Name}!\n\n" +
+                                    $"👔 Role: {employeeResult.JobTitle}\n" +
+                                    $"🚀 You have full access to the system.",
                                     "Login Successful", MessageBoxButton.OK, MessageBoxImage.Information);
 
-                    // Open the appropriate window based on user role
-                    if (employee.IsAdmin)
-                    {
-                        // Open Admin Dashboard
-                        AdminDashBoard adminDashboard = new AdminDashBoard(employee);
-                        adminDashboard.Show();
-                        this.Close();
-                    }
-                    else
-                    {
-                        // TODO: Open Employee Window
-                        MessageBox.Show("Employee interface will be implemented later.",
-                            "Coming Soon", MessageBoxButton.OK, MessageBoxImage.Information);
-
-                        // For now, just reset the form
-                        ResetLoginForm();
-                    }
+                    // Open Employee Dashboard - all employees get full access (previously called AdminDashBoard)
+                    var employeeDashboard = new AdminDashBoard(employeeResult);
+                    employeeDashboard.Show();
+                    this.Close();
                 }
                 else
                 {
                     // Authentication failed
-                    ShowError("Invalid username or password. Please try again.");
+                    ShowError("Invalid username or password. Please check your credentials and try again.");
                     txtPassword.Password = string.Empty;
                     txtPassword.Focus();
                 }
             }
             catch (Exception ex)
             {
-                ShowError($"An error occurred: {ex.Message}");
+                ShowError($"An error occurred during login: {ex.Message}");
             }
             finally
             {
                 // Reset button state
                 btnEmployeeLogin.IsEnabled = true;
-                btnEmployeeLogin.Content = "LOGIN";
+                btnEmployeeLogin.Content = "🚀 LOGIN AS EMPLOYEE";
             }
         }
 
@@ -223,10 +213,10 @@ namespace NguyenQuocHuy_SE193304_ASM01
                 return;
             }
 
-            // Validate phone format
-            if (phone.Length != 10 || !IsDigitsOnly(phone))
+            // Validate phone contains only digits (removed 10-digit requirement)
+            if (!IsDigitsOnly(phone))
             {
-                ShowError("Phone number must be exactly 10 digits.");
+                ShowError("Phone number must contain only digits.");
                 return;
             }
 
@@ -234,46 +224,47 @@ namespace NguyenQuocHuy_SE193304_ASM01
             {
                 // Show loading state
                 btnCustomerLogin.IsEnabled = false;
-                btnCustomerLogin.Content = "LOGGING IN...";
+                btnCustomerLogin.Content = "🔄 LOGGING IN...";
 
-                // Authenticate customer by phone
-                Customers customer = _customerService.AuthenticateByPhone(phone);
+                // Authenticate Customer by phone
+                var customerResult = _customerService.AuthenticateByPhone(phone);
 
-                if (customer != null)
+                if (customerResult != null)
                 {
                     // Authentication successful
                     HideError();
 
                     // Store logged in user information in application-wide state
-                    App.Current.Properties["CurrentUser"] = customer;
+                    App.Current.Properties["CurrentUser"] = customerResult;
                     App.Current.Properties["UserType"] = "Customer";
 
                     // Brief welcome message
-                    MessageBox.Show($"Welcome, {customer.ContactName}!\n" +
-                                    $"Company: {customer.CompanyName}",
+                    MessageBox.Show($"🎉 Welcome back, {customerResult.ContactName}!\n\n" +
+                                    $"🏢 Company: {customerResult.CompanyName}\n" +
+                                    $"📱 Phone: {customerResult.Phone}",
                                     "Login Successful", MessageBoxButton.OK, MessageBoxImage.Information);
 
                     // Open Customer Window
-                    CustomerWindow customerWindow = new CustomerWindow(customer);
+                    var customerWindow = new CustomerWindow(customerResult);
                     customerWindow.Show();
                     this.Close();
                 }
                 else
                 {
                     // Authentication failed
-                    ShowError("Invalid phone number. Please try again.");
+                    ShowError("Phone number not found in our system. Please check your number and try again.");
                     txtPhone.Focus();
                 }
             }
             catch (Exception ex)
             {
-                ShowError($"An error occurred: {ex.Message}");
+                ShowError($"An error occurred during login: {ex.Message}");
             }
             finally
             {
                 // Reset button state
                 btnCustomerLogin.IsEnabled = true;
-                btnCustomerLogin.Content = "LOGIN AS CUSTOMER";
+                btnCustomerLogin.Content = "🛒 LOGIN AS CUSTOMER";
             }
         }
 
@@ -318,3 +309,4 @@ namespace NguyenQuocHuy_SE193304_ASM01
         }
     }
 }
+

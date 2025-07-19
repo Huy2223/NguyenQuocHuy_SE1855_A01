@@ -17,22 +17,22 @@ namespace Repositories
             employeeDAO = new EmployeeDAO();
         }
 
-        public IEnumerable<Employees> GetAllEmployees()
+        public IEnumerable<Employee> GetAllEmployees()
         {
             return employeeDAO.GetAllEmployees();
         }
 
-        public Employees GetEmployeeByID(int employeeID)
+        public Employee GetEmployeeByID(int employeeID)
         {
             return employeeDAO.GetEmployeeByID(employeeID);
         }
 
-        public void AddEmployee(Employees employee)
+        public void AddEmployee(Employee employee)
         {
             employeeDAO.AddEmployee(employee);
         }
 
-        public void UpdateEmployee(Employees employee)
+        public void UpdateEmployee(Employee employee)
         {
             employeeDAO.UpdateEmployee(employee);
         }
@@ -42,12 +42,12 @@ namespace Repositories
             employeeDAO.DeleteEmployee(employeeID);
         }
 
-        public IEnumerable<Employees> SearchEmployeesByName(string name)
+        public IEnumerable<Employee> SearchEmployeesByName(string name)
         {
             return employeeDAO.SearchEmployeesByName(name);
         }
 
-        public Employees Authenticate(string username, string password)
+        public Employee Authenticate(string username, string password)
         {
             return employeeDAO.Authenticate(username, password);
         }

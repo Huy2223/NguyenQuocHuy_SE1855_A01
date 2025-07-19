@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -14,7 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using BusinessObject;
 using Services;
-using NguyenQuocHuyWPF.Customer;
+using CustomerEntity = BusinessObject.Customer;
 
 namespace NguyenQuocHuyWPF.Admin
 {
@@ -24,43 +24,28 @@ namespace NguyenQuocHuyWPF.Admin
     public partial class ManageCustomer : Window
     {
         private readonly ICustomerService _customerService;
-        private ObservableCollection<Customers> _customers;
-        
+        private ObservableCollection<CustomerEntity> _customers;
+
         public ManageCustomer()
         {
             InitializeComponent();
-            
+
             // Initialize service
             _customerService = new CustomerService();
-            
+
             // Initialize observable collection
-            _customers = new ObservableCollection<Customers>();
+            _customers = new ObservableCollection<CustomerEntity>();
             dgCustomers.ItemsSource = _customers;
-            
-            // Load customers
-            LoadCustomers();
+
+            // Load customers when window is loaded
+            this.Loaded += (s, e) => LoadAllCustomers();
         }
-        
-        private void LoadCustomers(string searchTerm = "")
+
+        private void LoadAllCustomers()
         {
             try
             {
-                IEnumerable<Customers> customers;
-                
-                if (string.IsNullOrWhiteSpace(searchTerm))
-                {
-                    customers = _customerService.GetAllCustomers();
-                }
-                else
-                {
-                    // Try to search by name first, then by company if no results
-                    customers = _customerService.SearchCustomersByName(searchTerm);
-                    
-                    if (!customers.Any())
-                    {
-                        customers = _customerService.SearchCustomersByCompany(searchTerm);
-                    }
-                }
+                var customers = _customerService.GetAllCustomers();
                 
                 // Update ObservableCollection with the new data
                 _customers.Clear();
@@ -68,21 +53,62 @@ namespace NguyenQuocHuyWPF.Admin
                 {
                     _customers.Add(customer);
                 }
-                
-                txtCustomerStatus.Text = $"Total customers: {_customers.Count}";
+
+                txtCustomerStatus.Text = $"?? Total customers: {_customers.Count} | Ready to manage customer data";
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading customers: {ex.Message}", "Error", 
+                MessageBox.Show($"Error loading customers: {ex.Message}", "Error",
                     MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
-        
+
+        private void LoadCustomers(string searchTerm = "")
+        {
+            try
+            {
+                IEnumerable<CustomerEntity> customers;
+
+                if (string.IsNullOrWhiteSpace(searchTerm))
+                {
+                    customers = _customerService.GetAllCustomers();
+                }
+                else
+                {
+                    // Search in both name and company
+                    var customersByName = _customerService.SearchCustomersByName(searchTerm);
+                    var customersByCompany = _customerService.SearchCustomersByCompany(searchTerm);
+                    
+                    // Combine and remove duplicates using LINQ
+                    customers = customersByName.Concat(customersByCompany)
+                                               .GroupBy(c => c.CustomerId)
+                                               .Select(g => g.First())
+                                               .ToList();
+                }
+
+                // Update ObservableCollection with the new data
+                _customers.Clear();
+                foreach (var customer in customers)
+                {
+                    _customers.Add(customer);
+                }
+
+                txtCustomerStatus.Text = string.IsNullOrWhiteSpace(searchTerm) 
+                    ? $"?? Total customers: {_customers.Count} | Ready to manage customer data"
+                    : $"?? Search results: {_customers.Count} customers found for '{searchTerm}'";
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading customers: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
         private void BtnSearchCustomer_Click(object sender, RoutedEventArgs e)
         {
             LoadCustomers(txtSearchCustomer.Text.Trim());
         }
-        
+
         private void TxtSearchCustomer_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.Key == Key.Enter)
@@ -90,120 +116,117 @@ namespace NguyenQuocHuyWPF.Admin
                 LoadCustomers(txtSearchCustomer.Text.Trim());
             }
         }
-        
+
+        private void BtnRefreshCustomers_Click(object sender, RoutedEventArgs e)
+        {
+            txtSearchCustomer.Text = string.Empty;
+            LoadAllCustomers();
+        }
+
         private void BtnAddCustomer_Click(object sender, RoutedEventArgs e)
         {
-            // Create and show the AddNewCustomer dialog
-            var addCustomerDialog = new AddNewCustomer();
-            
-            // Subscribe to the CustomerAdded event
-            addCustomerDialog.CustomerAdded += (s, args) => 
+            try
             {
-                // Add the new customer to the ObservableCollection
-                _customers.Add(args.NewCustomer);
-                txtCustomerStatus.Text = $"Total customers: {_customers.Count}";
-            };
-            
-            addCustomerDialog.Owner = this;
-            addCustomerDialog.ShowDialog();
-        }
-        
-        private void BtnEditCustomer_Click(object sender, RoutedEventArgs e)
-        {
-            var customer = (sender as Button)?.DataContext as Customers;
-            if (customer != null)
-            {
-                // Create and show the EditCustomer dialog
-                var editCustomerDialog = new EditCustomer(customer);
+                var addCustomerWindow = new AddNewCustomer();
                 
-                // Subscribe to the CustomerUpdated event
-                editCustomerDialog.CustomerUpdated += (s, args) =>
+                // Handle customer added event
+                addCustomerWindow.CustomerAdded += (s, args) =>
                 {
-                    // Find and update the customer in the ObservableCollection
-                    var index = _customers.IndexOf(customer);
-                    if (index >= 0)
-                    {
-                        _customers[index] = args.UpdatedCustomer;
-                    }
+                    LoadAllCustomers(); // Refresh the list
                 };
                 
-                editCustomerDialog.Owner = this;
-                editCustomerDialog.ShowDialog();
+                addCustomerWindow.ShowDialog();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error opening add customer window: {ex.Message}", "Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
             }
         }
 
-        private void BtnEditProfile_Click(object sender, RoutedEventArgs e)
+        private void BtnEditCustomer_Click(object sender, RoutedEventArgs e)
         {
-            var customer = (sender as Button)?.DataContext as Customers;
+            var customer = (sender as Button)?.DataContext as CustomerEntity;
             if (customer != null)
             {
                 try
                 {
-                    // Navigate to EditProfile window, specifying that we're coming from admin panel
-                    EditProfile editProfileWindow = new EditProfile(customer, true);
+                    var editCustomerWindow = new EditCustomer(customer);
                     
-                    // Set up event handler to refresh the customer list when returning
-                    editProfileWindow.Closed += (s, args) => 
+                    // Handle customer updated event
+                    editCustomerWindow.CustomerUpdated += (s, args) =>
                     {
-                        // Refresh the customer data
-                        LoadCustomers();
-                        
-                        // Show this window again
-                        this.Show();
+                        LoadAllCustomers(); // Refresh the list
                     };
                     
-                    // Show the edit window and hide this one
-                    editProfileWindow.Show();
-                    this.Hide();
+                    editCustomerWindow.ShowDialog();
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Error opening profile editor: {ex.Message}", 
-                        "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                    MessageBox.Show($"Error opening edit customer window: {ex.Message}", "Error",
+                        MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             }
         }
-        
+
         private void BtnDeleteCustomer_Click(object sender, RoutedEventArgs e)
         {
-            var customer = (sender as Button)?.DataContext as Customers;
+            var customer = (sender as Button)?.DataContext as CustomerEntity;
             if (customer != null)
             {
-                if (MessageBox.Show($"Are you sure you want to delete customer '{customer.CompanyName}'?", 
-                    "Confirm Delete", MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes)
+                var result = MessageBox.Show(
+                    $"?? Are you sure you want to delete customer '{customer.CompanyName}'?\n\n" +
+                    $"Contact: {customer.ContactName}\n" +
+                    $"Phone: {customer.Phone}\n\n" +
+                    "?? This action will also delete all orders associated with this customer!\n" +
+                    "This action cannot be undone!",
+                    "Confirm Delete Customer", 
+                    MessageBoxButton.YesNo, 
+                    MessageBoxImage.Warning);
+
+                if (result == MessageBoxResult.Yes)
                 {
                     try
                     {
-                        _customerService.DeleteCustomer(customer.CustomerID);
+                        _customerService.DeleteCustomer(customer.CustomerId);
                         
                         // Remove from ObservableCollection (UI updates automatically)
                         _customers.Remove(customer);
-                        txtCustomerStatus.Text = $"Total customers: {_customers.Count}";
                         
+                        txtCustomerStatus.Text = $"? Customer deleted | Remaining customers: {_customers.Count}";
+
                         // Show success message
-                        MessageBox.Show("Customer deleted successfully.", "Success", 
+                        MessageBox.Show($"? Customer '{customer.CompanyName}' has been successfully deleted.", "Delete Successful",
                             MessageBoxButton.OK, MessageBoxImage.Information);
                     }
                     catch (Exception ex)
                     {
-                        MessageBox.Show($"Error deleting customer: {ex.Message}", "Error", 
+                        MessageBox.Show($"? Error deleting customer: {ex.Message}", "Delete Failed",
                             MessageBoxButton.OK, MessageBoxImage.Error);
                     }
                 }
             }
         }
-        
+
         private void DgCustomers_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            // Optional: Handle selection changed event
+            // Optional: Handle selection changed event for future features
         }
-        
+
         private void BtnBack_Click(object sender, RoutedEventArgs e)
         {
-            // Return to AdminDashboard
-            AdminDashBoard adminDashboard = new AdminDashBoard();
-            adminDashboard.Show();
-            this.Close();
+            try
+            {
+                // Return to AdminDashboard
+                AdminDashBoard adminDashboard = new AdminDashBoard();
+                adminDashboard.Show();
+                this.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error returning to dashboard: {ex.Message}", "Navigation Error",
+                    MessageBoxButton.OK, MessageBoxImage.Error);
+            }
         }
     }
 }

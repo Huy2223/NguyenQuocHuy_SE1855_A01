@@ -1,4 +1,5 @@
 ﻿using BusinessObject;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,64 +11,22 @@ namespace DataAccessLayer
 {
     public class CustomerDAO
     {
-        // Mock data - in a real application, this would be stored in a database
-        private static List<Customers> _customers = new List<Customers>
-        {
-            new Customers
-            {
-                CustomerID = 1,
-                CompanyName = "ABC Company",
-                ContactName = "John Smith",
-                ContactTitle = "Purchasing Manager",
-                Address = "123 Main Street, New York",
-                Phone = "5551234567"
-            },
-            new Customers
-            {
-                CustomerID = 2,
-                CompanyName = "XYZ Corporation",
-                ContactName = "Jane Doe",
-                ContactTitle = "CEO",
-                Address = "456 Broadway, Boston",
-                Phone = "5555678901"
-            },
-            new Customers
-            {
-                CustomerID = 3,
-                CompanyName = "Global Enterprises",
-                ContactName = "Michael Johnson",
-                ContactTitle = "Procurement Officer",
-                Address = "789 Fifth Avenue, Chicago",
-                Phone = "5559012345"
-            },
-            // Special customer with phone 1234567890 as requested
-            new Customers
-            {
-                CustomerID = 4,
-                CompanyName = "FPTU Technology",
-                ContactName = "Nguyen Quoc Huy",
-                ContactTitle = "CEO",
-                Address = "FPTU Campus, District 9, Ho Chi Minh City, Vietnam",
-                Phone = "1234567890"
-            }
-        };
-
-        private static int _nextId = 5;
-
         // Get all customers
-        public List<Customers> GetAllCustomers()
+        public List<Customer> GetAllCustomers()
         {
-            return _customers;
+            using var context = new LucySalesDataContext();
+            return context.Customers.ToList();
         }
 
         // Get customer by ID
-        public Customers GetCustomerByID(int customerID)
+        public Customer GetCustomerByID(int customerID)
         {
-            return _customers.FirstOrDefault(c => c.CustomerID == customerID);
+            using var context = new LucySalesDataContext();
+            return context.Customers.FirstOrDefault(c => c.CustomerId == customerID);
         }
 
         // Add a new customer
-        public void AddCustomer(Customers customer)
+        public void AddCustomer(Customer customer)
         {
             if (customer == null)
                 throw new ArgumentNullException(nameof(customer));
@@ -80,21 +39,22 @@ namespace DataAccessLayer
             if (string.IsNullOrWhiteSpace(customer.Phone))
                 throw new ArgumentException("Phone number is required");
 
-            // Validate phone number format (10 digits)
+            // Validate phone number format (digits only)
             if (!IsValidPhoneNumber(customer.Phone))
-                throw new ArgumentException("Phone number must contain exactly 10 digits");
+                throw new ArgumentException("Phone number must contain only digits");
 
+            using var context = new LucySalesDataContext();
+            
             // Check if phone already exists
-            if (_customers.Any(c => c.Phone == customer.Phone))
+            if (context.Customers.Any(c => c.Phone == customer.Phone))
                 throw new ArgumentException("Phone number is already registered");
 
-            // Set new ID
-            customer.CustomerID = _nextId++;
-            _customers.Add(customer);
+            context.Customers.Add(customer);
+            context.SaveChanges();
         }
 
         // Update an existing customer
-        public void UpdateCustomer(Customers customer)
+        public void UpdateCustomer(Customer customer)
         {
             if (customer == null)
                 throw new ArgumentNullException(nameof(customer));
@@ -107,17 +67,19 @@ namespace DataAccessLayer
             if (string.IsNullOrWhiteSpace(customer.Phone))
                 throw new ArgumentException("Phone number is required");
 
-            // Validate phone number format (10 digits)
+            // Validate phone number format (digits only)
             if (!IsValidPhoneNumber(customer.Phone))
-                throw new ArgumentException("Phone number must contain exactly 10 digits");
+                throw new ArgumentException("Phone number must contain only digits");
 
+            using var context = new LucySalesDataContext();
+            
             // Find existing customer
-            var existingCustomer = _customers.FirstOrDefault(c => c.CustomerID == customer.CustomerID);
+            var existingCustomer = context.Customers.FirstOrDefault(c => c.CustomerId == customer.CustomerId);
             if (existingCustomer == null)
-                throw new ArgumentException($"Customer with ID {customer.CustomerID} not found");
+                throw new ArgumentException($"Customer with ID {customer.CustomerId} not found");
 
             // Check if updated phone already exists (excluding current customer)
-            if (_customers.Any(c => c.CustomerID != customer.CustomerID && c.Phone == customer.Phone))
+            if (context.Customers.Any(c => c.CustomerId != customer.CustomerId && c.Phone == customer.Phone))
                 throw new ArgumentException("Phone number is already registered by another customer");
 
             // Update properties
@@ -126,72 +88,78 @@ namespace DataAccessLayer
             existingCustomer.ContactTitle = customer.ContactTitle;
             existingCustomer.Address = customer.Address;
             existingCustomer.Phone = customer.Phone;
+            
+            context.SaveChanges();
         }
 
         // Delete a customer
         public void DeleteCustomer(int customerID)
         {
-            var customer = _customers.FirstOrDefault(c => c.CustomerID == customerID);
+            using var context = new LucySalesDataContext();
+            var customer = context.Customers.FirstOrDefault(c => c.CustomerId == customerID);
             if (customer == null)
                 throw new ArgumentException($"Customer with ID {customerID} not found");
 
-            _customers.Remove(customer);
+            context.Customers.Remove(customer);
+            context.SaveChanges();
         }
 
         // Search customers by name
-        public List<Customers> SearchCustomersByName(string name)
+        public List<Customer> SearchCustomersByName(string name)
         {
+            using var context = new LucySalesDataContext();
             if (string.IsNullOrWhiteSpace(name))
-                return _customers;
+                return context.Customers.ToList();
 
-            return _customers.Where(c => c.ContactName.Contains(name, StringComparison.OrdinalIgnoreCase)).ToList();
+            return context.Customers.Where(c => c.ContactName.Contains(name)).ToList();
         }
 
         // Search customers by company name
-        public List<Customers> SearchCustomersByCompany(string companyName)
+        public List<Customer> SearchCustomersByCompany(string companyName)
         {
+            using var context = new LucySalesDataContext();
             if (string.IsNullOrWhiteSpace(companyName))
-                return _customers;
+                return context.Customers.ToList();
 
-            return _customers.Where(c => c.CompanyName.Contains(companyName, StringComparison.OrdinalIgnoreCase)).ToList();
+            return context.Customers.Where(c => c.CompanyName.Contains(companyName)).ToList();
         }
         
         // Authenticate customer by phone number
-        public Customers AuthenticateByPhone(string phone)
+        public Customer AuthenticateByPhone(string phone)
         {
             if (string.IsNullOrWhiteSpace(phone))
                 return null;
                 
-            // Validate phone number format (10 digits)
+            // Validate phone number format (digits only)
             if (!IsValidPhoneNumber(phone))
                 return null;
 
-            return _customers.FirstOrDefault(c => 
-                c.Phone == phone);
+            using var context = new LucySalesDataContext();
+            return context.Customers.FirstOrDefault(c => c.Phone == phone);
         }
         
         // Get customer by phone
-        public Customers GetCustomerByPhone(string phone)
+        public Customer GetCustomerByPhone(string phone)
         {
             if (string.IsNullOrWhiteSpace(phone))
                 return null;
                 
-            // Validate phone number format (10 digits)
+            // Validate phone number format (digits only)
             if (!IsValidPhoneNumber(phone))
                 return null;
                 
-            return _customers.FirstOrDefault(c => 
-                c.Phone == phone);
+            using var context = new LucySalesDataContext();
+            return context.Customers.FirstOrDefault(c => c.Phone == phone);
         }
         
-        // Validate phone number format (10 digits only)
+        // Validate phone number format (digits only, no length restriction)
         private bool IsValidPhoneNumber(string phone)
         {
             if (string.IsNullOrWhiteSpace(phone))
                 return false;
                 
-            // Phone must be exactly 10 digits
-            return Regex.IsMatch(phone, @"^\d{10}$");
+            // Phone must contain only digits (removed 10-digit requirement)
+            return Regex.IsMatch(phone, @"^\d+$");
         }
     }
 }

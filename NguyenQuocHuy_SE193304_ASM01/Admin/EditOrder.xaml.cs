@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
@@ -15,7 +15,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using BusinessObject;
 using Services;
-using NguyenQuocHuyWPF.Models; // Import the namespace with the shared OrderItemViewModel class
 
 namespace NguyenQuocHuyWPF.Admin
 {
@@ -24,7 +23,7 @@ namespace NguyenQuocHuyWPF.Admin
     /// </summary>
     public partial class EditOrder : Window
     {
-        private readonly Orders _order;
+        private readonly Order _order;
         private readonly ICustomerService _customerService;
         private readonly IProductService _productService;
         private readonly IOrderService _orderService;
@@ -32,15 +31,15 @@ namespace NguyenQuocHuyWPF.Admin
         private readonly IEmployeeService _employeeService;
         
         // Collection to hold order items
-        private ObservableCollection<OrderItemViewModel> _orderItems;
+        private ObservableCollection<EditOrderItemViewModel> _orderItems;
         
         // Currently selected product
-        private Products? _selectedProduct;
+        private Product? _selectedProduct;
         
         // Event to notify parent window when an order is updated
         public event EventHandler<OrderUpdatedEventArgs>? OrderUpdated;
         
-        public EditOrder(Orders order)
+        public EditOrder(Order order)
         {
             InitializeComponent();
             
@@ -55,8 +54,12 @@ namespace NguyenQuocHuyWPF.Admin
             _employeeService = new EmployeeService();
             
             // Initialize order items collection
-            _orderItems = new ObservableCollection<OrderItemViewModel>();
+            _orderItems = new ObservableCollection<EditOrderItemViewModel>();
             dgOrderItems.ItemsSource = _orderItems;
+            
+            // Set default values for form fields
+            txtQuantity.Text = "1";
+            txtDiscount.Text = "0";
             
             // Load data when window is loaded
             this.Loaded += (s, e) =>
@@ -72,7 +75,7 @@ namespace NguyenQuocHuyWPF.Admin
         private void LoadOrderData()
         {
             // Display order ID (read-only)
-            txtOrderID.Text = _order.OrderID.ToString();
+            txtOrderID.Text = _order.OrderId.ToString();
             
             // Set order date
             dpOrderDate.SelectedDate = _order.OrderDate;
@@ -84,9 +87,11 @@ namespace NguyenQuocHuyWPF.Admin
             {
                 var customers = _customerService.GetAllCustomers();
                 cmbCustomer.ItemsSource = customers;
+                cmbCustomer.DisplayMemberPath = "CompanyName";
+                cmbCustomer.SelectedValuePath = "CustomerId";
                 
                 // Select the customer for this order
-                cmbCustomer.SelectedValue = _order.CustomerID;
+                cmbCustomer.SelectedValue = _order.CustomerId;
             }
             catch (Exception ex)
             {
@@ -101,6 +106,8 @@ namespace NguyenQuocHuyWPF.Admin
             {
                 var products = _productService.GetAllProducts();
                 cmbProducts.ItemsSource = products;
+                cmbProducts.DisplayMemberPath = "ProductName";
+                cmbProducts.SelectedValuePath = "ProductId";
             }
             catch (Exception ex)
             {
@@ -115,9 +122,11 @@ namespace NguyenQuocHuyWPF.Admin
             {
                 var employees = _employeeService.GetAllEmployees();
                 cmbEmployee.ItemsSource = employees;
+                cmbEmployee.DisplayMemberPath = "Name";
+                cmbEmployee.SelectedValuePath = "EmployeeId";
                 
                 // Select the employee for this order
-                cmbEmployee.SelectedValue = _order.EmployeeID;
+                cmbEmployee.SelectedValue = _order.EmployeeId;
             }
             catch (Exception ex)
             {
@@ -131,7 +140,7 @@ namespace NguyenQuocHuyWPF.Admin
             try
             {
                 // Get order details for this order
-                var orderDetails = _orderDetailService.GetOrderDetailsByOrderID(_order.OrderID);
+                var orderDetails = _orderDetailService.GetOrderDetailsByOrderID(_order.OrderId);
                 
                 // Clear existing items
                 _orderItems.Clear();
@@ -140,14 +149,14 @@ namespace NguyenQuocHuyWPF.Admin
                 foreach (var detail in orderDetails)
                 {
                     // Get product information
-                    var product = _productService.GetProductByID(detail.ProductID);
+                    var product = _productService.GetProductByID(detail.ProductId);
                     if (product == null)
                         continue;
                         
                     // Add to collection
-                    _orderItems.Add(new OrderItemViewModel
+                    _orderItems.Add(new EditOrderItemViewModel
                     {
-                        ProductID = product.ProductID,
+                        ProductId = product.ProductId,
                         ProductName = product.ProductName,
                         UnitPrice = detail.UnitPrice,
                         Quantity = detail.Quantity,
@@ -167,7 +176,7 @@ namespace NguyenQuocHuyWPF.Admin
         
         private void CmbProducts_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            _selectedProduct = cmbProducts.SelectedItem as Products;
+            _selectedProduct = cmbProducts.SelectedItem as Product;
             UpdateProductPrice();
         }
         
@@ -175,7 +184,7 @@ namespace NguyenQuocHuyWPF.Admin
         {
             if (_selectedProduct != null)
             {
-                txtProductPrice.Text = $"${_selectedProduct.UnitPrice:0.00}";
+                txtProductPrice.Text = $"${_selectedProduct.UnitPrice ?? 0:0.00}";
             }
             else
             {
@@ -247,7 +256,7 @@ namespace NguyenQuocHuyWPF.Admin
             float discount = discountPercent / 100f;
             
             // Check if this product is already in the order
-            var existingItem = _orderItems.FirstOrDefault(item => item.ProductID == _selectedProduct.ProductID);
+            var existingItem = _orderItems.FirstOrDefault(item => item.ProductId == _selectedProduct.ProductId);
             
             if (existingItem != null)
             {
@@ -261,11 +270,11 @@ namespace NguyenQuocHuyWPF.Admin
             else
             {
                 // Add new item to order
-                _orderItems.Add(new OrderItemViewModel
+                _orderItems.Add(new EditOrderItemViewModel
                 {
-                    ProductID = _selectedProduct.ProductID,
+                    ProductId = _selectedProduct.ProductId,
                     ProductName = _selectedProduct.ProductName,
-                    UnitPrice = _selectedProduct.UnitPrice,
+                    UnitPrice = _selectedProduct.UnitPrice ?? 0,
                     Quantity = quantity,
                     Discount = discount
                 });
@@ -287,7 +296,7 @@ namespace NguyenQuocHuyWPF.Admin
         private void BtnRemoveItem_Click(object sender, RoutedEventArgs e)
         {
             // Get the item to remove
-            var item = (sender as Button)?.DataContext as OrderItemViewModel;
+            var item = (sender as Button)?.DataContext as EditOrderItemViewModel;
             
             if (item != null)
             {
@@ -315,6 +324,7 @@ namespace NguyenQuocHuyWPF.Admin
             if (MessageBox.Show("Are you sure you want to cancel editing this order? Any changes will be lost.", 
                 "Confirm", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes)
             {
+                this.DialogResult = false;
                 this.Close();
             }
         }
@@ -359,29 +369,29 @@ namespace NguyenQuocHuyWPF.Admin
             try
             {
                 // Update order object
-                _order.CustomerID = (int)cmbCustomer.SelectedValue;
-                _order.EmployeeID = (int)cmbEmployee.SelectedValue;
+                _order.CustomerId = (int)cmbCustomer.SelectedValue;
+                _order.EmployeeId = (int)cmbEmployee.SelectedValue;
                 _order.OrderDate = dpOrderDate.SelectedDate.Value;
                 
                 // Update order in database
                 _orderService.UpdateOrder(_order);
                 
                 // Delete existing order details
-                var existingDetails = _orderDetailService.GetOrderDetailsByOrderID(_order.OrderID);
+                var existingDetails = _orderDetailService.GetOrderDetailsByOrderID(_order.OrderId);
                 foreach (var detail in existingDetails)
                 {
-                    _orderDetailService.DeleteOrderDetail(_order.OrderID, detail.ProductID);
+                    _orderDetailService.DeleteOrderDetail(_order.OrderId, detail.ProductId);
                 }
                 
                 // Create new order details
                 foreach (var item in _orderItems)
                 {
-                    var orderDetail = new OrderDetails
+                    var orderDetail = new OrderDetail
                     {
-                        OrderID = _order.OrderID,
-                        ProductID = item.ProductID,
+                        OrderId = _order.OrderId,
+                        ProductId = item.ProductId,
                         UnitPrice = item.UnitPrice,
-                        Quantity = item.Quantity,
+                        Quantity = (short)item.Quantity,
                         Discount = item.Discount
                     };
                     
@@ -393,10 +403,11 @@ namespace NguyenQuocHuyWPF.Admin
                 OrderUpdated?.Invoke(this, new OrderUpdatedEventArgs(_order));
                 
                 // Show success message
-                MessageBox.Show($"Order #{_order.OrderID} updated successfully!", "Success", 
+                MessageBox.Show($"Order #{_order.OrderId} updated successfully!", "Success", 
                     MessageBoxButton.OK, MessageBoxImage.Information);
                 
                 // Close dialog
+                this.DialogResult = true;
                 this.Close();
             }
             catch (Exception ex)
@@ -418,12 +429,33 @@ namespace NguyenQuocHuyWPF.Admin
         }
     }
     
+    // Local ViewModel for order items in EditOrder - avoids conflicts
+    public class EditOrderItemViewModel
+    {
+        public int ProductId { get; set; }
+        public string ProductName { get; set; } = "";
+        public decimal UnitPrice { get; set; }
+        public int Quantity { get; set; }
+        public float Discount { get; set; }
+        public decimal Total { get; private set; }
+        
+        public EditOrderItemViewModel()
+        {
+            UpdateTotal();
+        }
+        
+        public void UpdateTotal()
+        {
+            Total = UnitPrice * Quantity * (1 - (decimal)Discount);
+        }
+    }
+    
     // Event args for order updated event
     public class OrderUpdatedEventArgs : EventArgs
     {
-        public Orders UpdatedOrder { get; private set; }
+        public Order UpdatedOrder { get; private set; }
         
-        public OrderUpdatedEventArgs(Orders order)
+        public OrderUpdatedEventArgs(Order order)
         {
             UpdatedOrder = order;
         }

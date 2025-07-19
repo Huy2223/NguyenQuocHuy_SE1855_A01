@@ -17,32 +17,32 @@ namespace Repositories
             orderDetailDAO = new DataAccessLayer.OrderDetailDAO();
         }
 
-        public IEnumerable<OrderDetails> GetAllOrderDetails()
+        public IEnumerable<OrderDetail> GetAllOrderDetails()
         {
             return orderDetailDAO.GetAllOrderDetails();
         }
 
-        public OrderDetails GetOrderDetail(int orderID, int productID)
+        public OrderDetail GetOrderDetail(int orderID, int productID)
         {
             return orderDetailDAO.GetOrderDetail(orderID, productID);
         }
 
-        public IEnumerable<OrderDetails> GetOrderDetailsByOrderID(int orderID)
+        public IEnumerable<OrderDetail> GetOrderDetailsByOrderID(int orderID)
         {
             return orderDetailDAO.GetOrderDetailsByOrderID(orderID);
         }
 
-        public IEnumerable<OrderDetails> GetOrderDetailsByProductID(int productID)
+        public IEnumerable<OrderDetail> GetOrderDetailsByProductID(int productID)
         {
             return orderDetailDAO.GetOrderDetailsByProductID(productID);
         }
 
-        public void AddOrderDetail(OrderDetails orderDetail)
+        public void AddOrderDetail(OrderDetail orderDetail)
         {
             orderDetailDAO.AddOrderDetail(orderDetail);
         }
 
-        public void UpdateOrderDetail(OrderDetails orderDetail)
+        public void UpdateOrderDetail(OrderDetail orderDetail)
         {
             orderDetailDAO.UpdateOrderDetail(orderDetail);
         }

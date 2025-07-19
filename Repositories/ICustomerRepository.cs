@@ -9,14 +9,14 @@ namespace Repositories
 {
     public interface ICustomerRepository
     {
-        IEnumerable<Customers> GetAllCustomers();
-        Customers GetCustomerByID(int customerID);
-        void AddCustomer(Customers customer);
-        void UpdateCustomer(Customers customer);
+        IEnumerable<Customer> GetAllCustomers();
+        Customer GetCustomerByID(int customerID);
+        void AddCustomer(Customer customer);
+        void UpdateCustomer(Customer customer);
         void DeleteCustomer(int customerID);
-        IEnumerable<Customers> SearchCustomersByName(string name);
-        IEnumerable<Customers> SearchCustomersByCompany(string companyName);
-        Customers AuthenticateByPhone(string phone);
-        Customers GetCustomerByPhone(string phone);
+        IEnumerable<Customer> SearchCustomersByName(string name);
+        IEnumerable<Customer> SearchCustomersByCompany(string companyName);
+        Customer AuthenticateByPhone(string phone);
+        Customer GetCustomerByPhone(string phone);
     }
 }

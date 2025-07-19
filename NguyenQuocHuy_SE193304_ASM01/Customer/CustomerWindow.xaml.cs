@@ -16,6 +16,7 @@ using BusinessObject;
 using Services;
 using NguyenQuocHuy_SE193304_ASM01;
 using NguyenQuocHuyWPF.Customer;
+using CustomerEntity = BusinessObject.Customer;
 
 namespace NguyenQuocHuyWPF
 {
@@ -24,12 +25,12 @@ namespace NguyenQuocHuyWPF
     /// </summary>
     public partial class CustomerWindow : Window
     {
-        private readonly Customers _currentCustomer;
+        private readonly CustomerEntity _currentCustomer;
         private readonly IOrderService _orderService;
         private readonly IOrderDetailService _orderDetailService;
         private readonly ICustomerService _customerService;
 
-        public CustomerWindow(Customers customer)
+        public CustomerWindow(CustomerEntity customer)
         {
             InitializeComponent();
             
@@ -102,15 +103,15 @@ namespace NguyenQuocHuyWPF
             try
             {
                 // Get orders for this customer
-                var orders = _orderService.GetOrdersByCustomerID(_currentCustomer.CustomerID);
+                var orders = _orderService.GetOrdersByCustomerID(_currentCustomer.CustomerId);
                 
                 // Create view model for displaying orders with additional info
                 var orderViewModels = orders.Select(o => new CustomerOrderViewModel
                 {
-                    OrderID = o.OrderID,
+                    OrderId = o.OrderId,
                     OrderDate = o.OrderDate,
-                    TotalAmount = CalculateOrderTotal(o.OrderID),
-                    ItemCount = GetOrderItemCount(o.OrderID),
+                    TotalAmount = CalculateOrderTotal(o.OrderId),
+                    ItemCount = GetOrderItemCount(o.OrderId),
                     Status = "Completed" // Default status for simplicity
                 }).ToList();
                 
@@ -186,7 +187,7 @@ namespace NguyenQuocHuyWPF
             var order = (sender as Button)?.DataContext as CustomerOrderViewModel;
             if (order != null)
             {
-                MessageBox.Show($"Order details functionality will be implemented in the future.\n\nOrder ID: {order.OrderID}\nDate: {order.OrderDate:d}\nTotal: {order.TotalAmount:C}", 
+                MessageBox.Show($"Order details functionality will be implemented in the future.\n\nOrder ID: {order.OrderId}\nDate: {order.OrderDate:d}\nTotal: {order.TotalAmount:C}", 
                     "Order Details", MessageBoxButton.OK, MessageBoxImage.Information);
             }
         }
@@ -209,13 +210,14 @@ namespace NguyenQuocHuyWPF
         }
     }
     
-    // ViewModel for Orders display in Customer Window
+    // ViewModel for order display in customer window
     public class CustomerOrderViewModel
     {
-        public int OrderID { get; set; }
+        public int OrderId { get; set; }
         public DateTime OrderDate { get; set; }
         public decimal TotalAmount { get; set; }
         public int ItemCount { get; set; }
         public string Status { get; set; } = "Completed";
     }
 }
+

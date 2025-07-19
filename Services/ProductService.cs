@@ -17,22 +17,22 @@ namespace Services
             _productRepository = new ProductRepository();
         }
 
-        public IEnumerable<Products> GetAllProducts()
+        public IEnumerable<Product> GetAllProducts()
         {
             return _productRepository.GetAllProducts();
         }
 
-        public Products GetProductByID(int productID)
+        public Product GetProductByID(int productID)
         {
             return _productRepository.GetProductByID(productID);
         }
 
-        public void AddProduct(Products product)
+        public void AddProduct(Product product)
         {
             _productRepository.AddProduct(product);
         }
 
-        public void UpdateProduct(Products product)
+        public void UpdateProduct(Product product)
         {
             _productRepository.UpdateProduct(product);
         }
@@ -42,22 +42,22 @@ namespace Services
             _productRepository.DeleteProduct(productID);
         }
 
-        public IEnumerable<Products> SearchProductsByName(string name)
+        public IEnumerable<Product> SearchProductsByName(string name)
         {
             return _productRepository.SearchProductsByName(name);
         }
 
-        public IEnumerable<Products> GetProductsByCategoryID(int categoryID)
+        public IEnumerable<Product> GetProductsByCategoryID(int categoryID)
         {
             return _productRepository.GetProductsByCategoryID(categoryID);
         }
 
-        public IEnumerable<Products> GetProductsByPriceRange(decimal minPrice, decimal maxPrice)
+        public IEnumerable<Product> GetProductsByPriceRange(decimal minPrice, decimal maxPrice)
         {
             return _productRepository.GetProductsByPriceRange(minPrice, maxPrice);
         }
 
-        public IEnumerable<Products> GetProductsInStock()
+        public IEnumerable<Product> GetProductsInStock()
         {
             return _productRepository.GetProductsInStock();
         }

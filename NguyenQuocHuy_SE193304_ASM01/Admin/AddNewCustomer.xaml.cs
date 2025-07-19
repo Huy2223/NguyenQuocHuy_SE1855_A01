@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,6 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using BusinessObject;
 using Services;
+using CustomerEntity = BusinessObject.Customer;
 
 namespace NguyenQuocHuyWPF.Admin
 {
@@ -24,7 +25,7 @@ namespace NguyenQuocHuyWPF.Admin
     {
         private readonly ICustomerService _customerService;
         
-        // Event to notify parent window when a customer is added
+        // Event to notify parent window when a Customer is added
         public event EventHandler<CustomerAddedEventArgs>? CustomerAdded;
         
         public AddNewCustomer()
@@ -81,17 +82,17 @@ namespace NguyenQuocHuyWPF.Admin
                 return;
             }
             
-            if (txtPhone.Text.Length != 10)
+            if (!IsDigitsOnly(txtPhone.Text))
             {
-                ShowError("Phone Number must be exactly 10 digits.");
+                ShowError("Phone Number must contain only digits.");
                 txtPhone.Focus();
                 return;
             }
             
             try
             {
-                // Create new customer object
-                var newCustomer = new Customers
+                // Create new Customer object
+                var newCustomer = new CustomerEntity
                 {
                     CompanyName = txtCompanyName.Text.Trim(),
                     ContactName = txtContactName.Text.Trim(),
@@ -103,7 +104,7 @@ namespace NguyenQuocHuyWPF.Admin
                 // Save to database
                 _customerService.AddCustomer(newCustomer);
                 
-                // Get the new customer with ID (for demonstration purposes)
+                // Get the new Customer with ID (for demonstration purposes)
                 var savedCustomer = _customerService.GetCustomerByPhone(newCustomer.Phone);
                 
                 // Notify parent window
@@ -135,12 +136,12 @@ namespace NguyenQuocHuyWPF.Admin
         }
     }
     
-    // Event args for customer added event
+    // Event args for Customer added event
     public class CustomerAddedEventArgs : EventArgs
     {
-        public Customers NewCustomer { get; private set; }
+        public CustomerEntity NewCustomer { get; private set; }
         
-        public CustomerAddedEventArgs(Customers customer)
+        public CustomerAddedEventArgs(CustomerEntity customer)
         {
             NewCustomer = customer;
         }

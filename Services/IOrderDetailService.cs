@@ -9,12 +9,12 @@ namespace Services
 {
     public interface IOrderDetailService
     {
-        IEnumerable<OrderDetails> GetAllOrderDetails();
-        OrderDetails GetOrderDetail(int orderID, int productID);
-        IEnumerable<OrderDetails> GetOrderDetailsByOrderID(int orderID);
-        IEnumerable<OrderDetails> GetOrderDetailsByProductID(int productID);
-        void AddOrderDetail(OrderDetails orderDetail);
-        void UpdateOrderDetail(OrderDetails orderDetail);
+        IEnumerable<OrderDetail> GetAllOrderDetails();
+        OrderDetail GetOrderDetail(int orderID, int productID);
+        IEnumerable<OrderDetail> GetOrderDetailsByOrderID(int orderID);
+        IEnumerable<OrderDetail> GetOrderDetailsByProductID(int productID);
+        void AddOrderDetail(OrderDetail orderDetail);
+        void UpdateOrderDetail(OrderDetail orderDetail);
         void DeleteOrderDetail(int orderID, int productID);
     }
 }

@@ -17,22 +17,22 @@ namespace Services
             _customerRepository = new CustomerRepository();
         }
 
-        public IEnumerable<Customers> GetAllCustomers()
+        public IEnumerable<Customer> GetAllCustomers()
         {
             return _customerRepository.GetAllCustomers();
         }
 
-        public Customers GetCustomerByID(int customerID)
+        public Customer GetCustomerByID(int customerID)
         {
             return _customerRepository.GetCustomerByID(customerID);
         }
 
-        public void AddCustomer(Customers customer)
+        public void AddCustomer(Customer customer)
         {
             _customerRepository.AddCustomer(customer);
         }
 
-        public void UpdateCustomer(Customers customer)
+        public void UpdateCustomer(Customer customer)
         {
             _customerRepository.UpdateCustomer(customer);
         }
@@ -42,22 +42,22 @@ namespace Services
             _customerRepository.DeleteCustomer(customerID);
         }
 
-        public IEnumerable<Customers> SearchCustomersByName(string name)
+        public IEnumerable<Customer> SearchCustomersByName(string name)
         {
             return _customerRepository.SearchCustomersByName(name);
         }
 
-        public IEnumerable<Customers> SearchCustomersByCompany(string companyName)
+        public IEnumerable<Customer> SearchCustomersByCompany(string companyName)
         {
             return _customerRepository.SearchCustomersByCompany(companyName);
         }
 
-        public Customers AuthenticateByPhone(string phone)
+        public Customer AuthenticateByPhone(string phone)
         {
             return _customerRepository.AuthenticateByPhone(phone);
         }
 
-        public Customers GetCustomerByPhone(string phone)
+        public Customer GetCustomerByPhone(string phone)
         {
             return _customerRepository.GetCustomerByPhone(phone);
         }

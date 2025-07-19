@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,6 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using BusinessObject;
 using Services;
+using CustomerEntity = BusinessObject.Customer;
 
 namespace NguyenQuocHuyWPF.Admin
 {
@@ -22,23 +23,23 @@ namespace NguyenQuocHuyWPF.Admin
     /// </summary>
     public partial class EditCustomer : Window
     {
-        private readonly Customers _customer;
+        private readonly CustomerEntity _customer;
         private readonly ICustomerService _customerService;
         
-        // Event to notify parent window when a customer is updated
+        // Event to notify parent window when a Customer is updated
         public event EventHandler<CustomerUpdatedEventArgs>? CustomerUpdated;
         
-        public EditCustomer(Customers customer)
+        public EditCustomer(CustomerEntity customer)
         {
             InitializeComponent();
             
-            // Store the customer
+            // Store the Customer
             _customer = customer ?? throw new ArgumentNullException(nameof(customer));
             
             // Initialize service
             _customerService = new CustomerService();
             
-            // Load customer data into form
+            // Load Customer data into form
             LoadCustomerData();
             
             // Set focus to company name field
@@ -100,28 +101,28 @@ namespace NguyenQuocHuyWPF.Admin
                 return;
             }
             
-            if (txtPhone.Text.Length != 10)
+            if (!Regex.IsMatch(txtPhone.Text, @"^\d+$"))
             {
-                ShowError("Phone Number must be exactly 10 digits.");
+                ShowError("Phone Number must contain only digits.");
                 txtPhone.Focus();
                 return;
             }
             
             try
             {
-                // Check if phone exists and belongs to another customer
+                // Check if phone exists and belongs to another Customer
                 var existingCustomer = _customerService.GetCustomerByPhone(txtPhone.Text.Trim());
-                if (existingCustomer != null && existingCustomer.CustomerID != _customer.CustomerID)
+                if (existingCustomer != null && existingCustomer.CustomerId != _customer.CustomerId)
                 {
                     ShowError("This phone number is already registered with another customer.");
                     txtPhone.Focus();
                     return;
                 }
                 
-                // Create updated customer object
-                var updatedCustomer = new Customers
+                // Create updated Customer object
+                var updatedCustomer = new CustomerEntity
                 {
-                    CustomerID = _customer.CustomerID,
+                    CustomerId = _customer.CustomerId,
                     CompanyName = txtCompanyName.Text.Trim(),
                     ContactName = txtContactName.Text.Trim(),
                     ContactTitle = txtContactTitle.Text.Trim(),
@@ -161,12 +162,12 @@ namespace NguyenQuocHuyWPF.Admin
         }
     }
     
-    // Event args for customer updated event
+    // Event args for Customer updated event
     public class CustomerUpdatedEventArgs : EventArgs
     {
-        public Customers UpdatedCustomer { get; private set; }
+        public CustomerEntity UpdatedCustomer { get; private set; }
         
-        public CustomerUpdatedEventArgs(Customers customer)
+        public CustomerUpdatedEventArgs(CustomerEntity customer)
         {
             UpdatedCustomer = customer;
         }

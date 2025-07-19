@@ -17,22 +17,22 @@ namespace Services
             _orderRepository = new OrderRepository();
         }
 
-        public IEnumerable<Orders> GetAllOrders()
+        public IEnumerable<Order> GetAllOrders()
         {
             return _orderRepository.GetAllOrders();
         }
 
-        public Orders GetOrderByID(int orderID)
+        public Order GetOrderByID(int orderID)
         {
             return _orderRepository.GetOrderByID(orderID);
         }
 
-        public void AddOrder(Orders order)
+        public void AddOrder(Order order)
         {
             _orderRepository.AddOrder(order);
         }
 
-        public void UpdateOrder(Orders order)
+        public void UpdateOrder(Order order)
         {
             _orderRepository.UpdateOrder(order);
         }
@@ -42,17 +42,17 @@ namespace Services
             _orderRepository.DeleteOrder(orderID);
         }
 
-        public IEnumerable<Orders> GetOrdersByCustomerID(int customerID)
+        public IEnumerable<Order> GetOrdersByCustomerID(int customerID)
         {
             return _orderRepository.GetOrdersByCustomerID(customerID);
         }
 
-        public IEnumerable<Orders> GetOrdersByEmployeeID(int employeeID)
+        public IEnumerable<Order> GetOrdersByEmployeeID(int employeeID)
         {
             return _orderRepository.GetOrdersByEmployeeID(employeeID);
         }
 
-        public IEnumerable<Orders> GetOrdersByDateRange(DateTime startDate, DateTime endDate)
+        public IEnumerable<Order> GetOrdersByDateRange(DateTime startDate, DateTime endDate)
         {
             return _orderRepository.GetOrdersByDate(startDate, endDate);
         }

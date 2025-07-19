@@ -9,11 +9,11 @@ namespace Services
 {
     public interface ICategoryService
     {
-        IEnumerable<Categories> GetAllCategories();
-        Categories GetCategoryByID(int categoryID);
-        void AddCategory(Categories category);
-        void UpdateCategory(Categories category);
+        IEnumerable<Category> GetAllCategories();
+        Category GetCategoryByID(int categoryID);
+        void AddCategory(Category category);
+        void UpdateCategory(Category category);
         void DeleteCategory(int categoryID);
-        IEnumerable<Categories> SearchCategoriesByName(string name);
+        IEnumerable<Category> SearchCategoriesByName(string name);
     }
 }

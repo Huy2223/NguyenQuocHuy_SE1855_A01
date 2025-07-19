@@ -17,32 +17,32 @@ namespace Services
             _orderDetailRepository = new OrderDetailRepository();
         }
 
-        public IEnumerable<OrderDetails> GetAllOrderDetails()
+        public IEnumerable<OrderDetail> GetAllOrderDetails()
         {
             return _orderDetailRepository.GetAllOrderDetails();
         }
 
-        public OrderDetails GetOrderDetail(int orderID, int productID)
+        public OrderDetail GetOrderDetail(int orderID, int productID)
         {
             return _orderDetailRepository.GetOrderDetail(orderID, productID);
         }
 
-        public IEnumerable<OrderDetails> GetOrderDetailsByOrderID(int orderID)
+        public IEnumerable<OrderDetail> GetOrderDetailsByOrderID(int orderID)
         {
             return _orderDetailRepository.GetOrderDetailsByOrderID(orderID);
         }
 
-        public IEnumerable<OrderDetails> GetOrderDetailsByProductID(int productID)
+        public IEnumerable<OrderDetail> GetOrderDetailsByProductID(int productID)
         {
             return _orderDetailRepository.GetOrderDetailsByProductID(productID);
         }
 
-        public void AddOrderDetail(OrderDetails orderDetail)
+        public void AddOrderDetail(OrderDetail orderDetail)
         {
             _orderDetailRepository.AddOrderDetail(orderDetail);
         }
 
-        public void UpdateOrderDetail(OrderDetails orderDetail)
+        public void UpdateOrderDetail(OrderDetail orderDetail)
         {
             _orderDetailRepository.UpdateOrderDetail(orderDetail);
         }

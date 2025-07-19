@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,6 +14,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Shapes;
 using BusinessObject;
 using Services;
+using CustomerEntity = BusinessObject.Customer;
 
 namespace NguyenQuocHuyWPF.Customer
 {
@@ -22,12 +23,12 @@ namespace NguyenQuocHuyWPF.Customer
     /// </summary>
     public partial class EditProfile : Window
     {
-        private readonly Customers _customer;
+        private readonly CustomerEntity _customer;
         private readonly ICustomerService _customerService;
         private readonly bool _isFromAdminPanel;
-        private Action<Customers> _onProfileUpdated;
+        private Action<CustomerEntity> _onProfileUpdated;
 
-        public EditProfile(Customers customer, bool isFromAdminPanel = false, Action<Customers> onProfileUpdated = null)
+        public EditProfile(CustomerEntity customer, bool isFromAdminPanel = false, Action<CustomerEntity> onProfileUpdated = null)
         {
             InitializeComponent();
 
@@ -91,17 +92,17 @@ namespace NguyenQuocHuyWPF.Customer
                     return;
                 }
 
-                // Phone validation
-                if (txtPhone.Text.Length != 10 || !Regex.IsMatch(txtPhone.Text, @"^\d+$"))
+                // Phone validation - only check if it contains digits
+                if (!Regex.IsMatch(txtPhone.Text, @"^\d+$"))
                 {
-                    MessageBox.Show("Phone number must be exactly 10 digits.",
+                    MessageBox.Show("Phone number must contain only digits.",
                         "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
                     return;
                 }
 
                 // Check if phone exists and belongs to another customer
                 var existingCustomer = _customerService.GetCustomerByPhone(txtPhone.Text.Trim());
-                if (existingCustomer != null && existingCustomer.CustomerID != _customer.CustomerID)
+                if (existingCustomer != null && existingCustomer.CustomerId != _customer.CustomerId)
                 {
                     MessageBox.Show("This phone number is already registered with another customer.",
                         "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
@@ -109,9 +110,9 @@ namespace NguyenQuocHuyWPF.Customer
                 }
 
                 // Update customer object
-                var updatedCustomer = new Customers
+                var updatedCustomer = new CustomerEntity
                 {
-                    CustomerID = _customer.CustomerID,
+                    CustomerId = _customer.CustomerId,
                     ContactName = txtContactName.Text.Trim(),
                     ContactTitle = txtContactTitle.Text.Trim(),
                     CompanyName = txtCompanyName.Text.Trim(),

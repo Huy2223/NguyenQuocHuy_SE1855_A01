@@ -17,22 +17,22 @@ namespace Repositories
             categoryDAO = new CategoryDAO();
         }
 
-        public IEnumerable<Categories> GetAllCategories()
+        public IEnumerable<Category> GetAllCategories()
         {
             return categoryDAO.GetAllCategories();
         }
 
-        public Categories GetCategoryByID(int categoryID)
+        public Category GetCategoryByID(int categoryID)
         {
             return categoryDAO.GetCategoryByID(categoryID);
         }
 
-        public void AddCategory(Categories category)
+        public void AddCategory(Category category)
         {
             categoryDAO.AddCategory(category);
         }
 
-        public void UpdateCategory(Categories category)
+        public void UpdateCategory(Category category)
         {
             categoryDAO.UpdateCategory(category);
         }
@@ -42,7 +42,7 @@ namespace Repositories
             categoryDAO.DeleteCategory(categoryID);
         }
 
-        public IEnumerable<Categories> SearchCategoriesByName(string name)
+        public IEnumerable<Category> SearchCategoriesByName(string name)
         {
             return categoryDAO.SearchCategoriesByName(name);
         }

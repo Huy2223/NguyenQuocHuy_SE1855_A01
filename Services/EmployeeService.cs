@@ -17,22 +17,22 @@ namespace Services
             _employeeRepository = new EmployeeRepository();
         }
 
-        public IEnumerable<Employees> GetAllEmployees()
+        public IEnumerable<Employee> GetAllEmployees()
         {
             return _employeeRepository.GetAllEmployees();
         }
 
-        public Employees GetEmployeeByID(int employeeID)
+        public Employee GetEmployeeByID(int employeeID)
         {
             return _employeeRepository.GetEmployeeByID(employeeID);
         }
 
-        public void AddEmployee(Employees employee)
+        public void AddEmployee(Employee employee)
         {
             _employeeRepository.AddEmployee(employee);
         }
 
-        public void UpdateEmployee(Employees employee)
+        public void UpdateEmployee(Employee employee)
         {
             _employeeRepository.UpdateEmployee(employee);
         }
@@ -42,12 +42,12 @@ namespace Services
             _employeeRepository.DeleteEmployee(employeeID);
         }
 
-        public IEnumerable<Employees> SearchEmployeesByName(string name)
+        public IEnumerable<Employee> SearchEmployeesByName(string name)
         {
             return _employeeRepository.SearchEmployeesByName(name);
         }
 
-        public Employees Login(string username, string password)
+        public Employee Login(string username, string password)
         {
             return _employeeRepository.Authenticate(username, password);
         }

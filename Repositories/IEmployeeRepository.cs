@@ -9,12 +9,12 @@ namespace Repositories
 {
     public interface IEmployeeRepository
     {
-        IEnumerable<Employees> GetAllEmployees();
-        Employees GetEmployeeByID(int employeeID);
-        void AddEmployee(Employees employee);
-        void UpdateEmployee(Employees employee);
+        IEnumerable<Employee> GetAllEmployees();
+        Employee GetEmployeeByID(int employeeID);
+        void AddEmployee(Employee employee);
+        void UpdateEmployee(Employee employee);
         void DeleteEmployee(int employeeID);
-        IEnumerable<Employees> SearchEmployeesByName(string name);
-        Employees Authenticate(string username, string password);
+        IEnumerable<Employee> SearchEmployeesByName(string name);
+        Employee Authenticate(string username, string password);
     }
 }
